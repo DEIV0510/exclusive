@@ -10,6 +10,9 @@
   var u = ECM.u;
   var CONFIG = ECM.CONFIG;
 
+  // ¿El dispositivo tiene cursor? Decide si vale la pena cargar la 2ª foto.
+  var HAY_CURSOR = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+
   /* ═══ Tarjeta ═════════════════════════════════════════════════════════ */
   function tarjeta(p, ops) {
     ops = ops || {};
@@ -25,7 +28,9 @@
     var alt = p.nombre + ' — gorra ' + p.tipo.toLowerCase() + ' ' + p.marca +
               ' color ' + (p.colores || []).join(' y ').toLowerCase();
 
-    var alterna = p.imagenes[1]
+    // La segunda foto solo existe donde hay cursor de verdad: en táctil nunca
+    // llega a mostrarse (el efecto es :hover) y sin esto se descargaba igual.
+    var alterna = (p.imagenes[1] && HAY_CURSOR)
       ? u.figura(p.imagenes[1], p.nombre + ' — vista alterna', { claseCaja: 'foto--alt' })
       : '';
 
@@ -118,7 +123,10 @@
       return true;
     });
 
-    var ordenes = {
+    // Objeto sin prototipo: si no, un ?orden=__proto__ o ?orden=constructor
+    // devolvería una función heredada y el catálogo reventaría al ordenar.
+    var ordenes = Object.create(null);
+    Object.assign(ordenes, {
       'recientes': function (a, b) { return (b.nuevo === true) - (a.nuevo === true) || a.id - b.id; },
       'destacados': function (a, b) { return (b.destacado === true) - (a.destacado === true) || a.id - b.id; },
       'nombre': function (a, b) { return a.nombre.localeCompare(b.nombre, 'es'); },
@@ -137,24 +145,41 @@
         if (!tb) return -1;
         return b.precio - a.precio;
       },
-    };
-    var cmp = ordenes[e.orden] || ordenes.recientes;
+    });
+    var cmp = typeof ordenes[e.orden] === 'function' ? ordenes[e.orden] : ordenes.recientes;
     return lista.slice().sort(cmp);
   }
 
   /* ═══ URL ═════════════════════════════════════════════════════════════ */
+  var ORDENES_VALIDOS = ['recientes', 'destacados', 'nombre', 'precio-asc', 'precio-desc'];
+
   function leerUrl() {
     var p = new URLSearchParams(location.search);
-    function lista(clave) {
-      var v = p.get(clave);
-      return v ? v.split(',').map(function (x) { return x.trim(); }).filter(Boolean) : [];
+    // getAll + join: así ?marca=A&marca=B no pierde uno de los dos
+    function lista(clave, validos) {
+      var crudos = p.getAll(clave).join(',');
+      var vals = crudos
+        ? crudos.split(',').map(function (x) { return x.trim(); }).filter(Boolean)
+        : [];
+      // Solo se aceptan valores que existan de verdad: un ?marca=Nike dejaría
+      // el catálogo vacío sin que el usuario entienda por qué
+      if (validos) vals = vals.filter(function (v) { return validos.indexOf(v) !== -1; });
+      return vals.filter(function (v, i, a) { return a.indexOf(v) === i; });
     }
-    estado.marcas = lista('marca');
-    estado.tipos = lista('tipo');
-    estado.colores = lista('color');
-    estado.q = p.get('q') || '';
-    estado.orden = p.get('orden') || 'recientes';
-    estado.soloDisponibles = p.get('disponible') === '1';
+
+    estado.marcas = lista('marca', CONFIG.taxonomia.marcas);
+    estado.tipos = lista('tipo', CONFIG.taxonomia.tipos);
+    estado.colores = lista('color', Object.keys(CONFIG.taxonomia.colores));
+    estado.q = (p.get('q') || '').slice(0, 80);
+
+    var orden = p.get('orden') || 'recientes';
+    if (ORDENES_VALIDOS.indexOf(orden) === -1) orden = 'recientes';
+    // Ordenar por precio no significa nada mientras no haya precios cargados
+    if (orden.indexOf('precio') === 0 && !u.hayPrecios()) orden = 'recientes';
+    estado.orden = orden;
+
+    var disp = p.get('disponible');
+    estado.soloDisponibles = disp === '1' || disp === 'true';
   }
 
   function escribirUrl() {
@@ -166,7 +191,11 @@
     if (estado.orden !== 'recientes') p.set('orden', estado.orden);
     if (estado.soloDisponibles) p.set('disponible', '1');
     var qs = p.toString();
-    history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
+    // Abierto con doble clic (file://), replaceState lanza SecurityError y
+    // dejaría el catálogo sin filtrar desde el primer clic.
+    try {
+      history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
+    } catch (e) { /* sin historial: los filtros siguen funcionando igual */ }
   }
 
   /* ═══ Render del catálogo ═════════════════════════════════════════════ */
@@ -361,9 +390,11 @@
     b.disabled = n === 0;
   }
 
+  var soltarFocoPanel = null;
+
   function abrirPanel() {
     var p = u.$('#panel');
-    if (!p) return;
+    if (!p || p.classList.contains('abierto')) return;   // no reabrir sobre sí mismo
     // Copia provisional: en móvil el grid queda tapado, así que los cambios
     // solo se aplican al pulsar "Ver N gorras".
     borrador = JSON.parse(JSON.stringify(estado));
@@ -371,13 +402,17 @@
     u.$('#velo-panel').classList.add('abierto');
     u.$('#btn-filtros').setAttribute('aria-expanded', 'true');
     u.bloquearScroll(true);
+    soltarFocoPanel = u.atraparFoco(p);
     pintarChips();
+    var sel = u.$('#orden-panel');
+    if (sel) sel.value = borrador.orden;
     setTimeout(function () { u.enfocarPrimero(p); }, 60);
   }
 
   function cerrarPanel(aplicarCambios) {
     var p = u.$('#panel');
     if (!p || !p.classList.contains('abierto')) return;
+    if (soltarFocoPanel) { soltarFocoPanel(); soltarFocoPanel = null; }
     if (aplicarCambios && borrador) {
       estado.marcas = borrador.marcas;
       estado.tipos = borrador.tipos;
@@ -483,9 +518,16 @@
     document.addEventListener('click', function (ev) {
       var chip = ev.target.closest('.chip[data-filtro]');
       if (chip && !chip.disabled) {
-        alternar(chip.getAttribute('data-filtro'), chip.getAttribute('data-valor'));
-        if (borrador) pintarChips();
-        else sincronizar();
+        var grupo = chip.getAttribute('data-filtro');
+        var valor = chip.getAttribute('data-valor');
+        alternar(grupo, valor);
+        if (borrador) pintarChips(); else sincronizar();
+        // Al repintar los chips se destruye el que acaba de pulsarse: hay que
+        // devolverle el foco a su reemplazo o el teclado vuelve al principio.
+        var nuevo = u.$$('.chip[data-filtro="' + grupo + '"]').filter(function (c) {
+          return c.getAttribute('data-valor') === valor;
+        })[0];
+        if (nuevo && document.activeElement !== nuevo) nuevo.focus();
         return;
       }
       var quitar = ev.target.closest('[data-quitar-filtro]');

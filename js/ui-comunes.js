@@ -81,6 +81,13 @@
       u.$$('a', menu).forEach(function (a) {
         a.addEventListener('click', cerrarMenu);
       });
+
+      // Al pasar a escritorio el botón de menú desaparece, pero el panel no:
+      // si se queda abierto tapa la pantalla entera y no hay forma de cerrarlo.
+      var anchoEscritorio = window.matchMedia('(min-width: 900px)');
+      var alCambiarAncho = function (ev) { if (ev.matches) cerrarMenu(); };
+      if (anchoEscritorio.addEventListener) anchoEscritorio.addEventListener('change', alCambiarAncho);
+      else if (anchoEscritorio.addListener) anchoEscritorio.addListener(alCambiarAncho);
     }
   }
 
@@ -139,6 +146,17 @@
     var pie = u.$('#carrito-pie');
     if (!cuerpo) return;
 
+    // Redibujar el cajón destruye el botón que el usuario acaba de pulsar y el
+    // foco se iría al <body>, saltándose la trampa de foco. Se anota cuál era
+    // para devolvérselo a su reemplazo al terminar.
+    var focoPrevio = null;
+    if (document.activeElement && cuerpo.contains(document.activeElement)) {
+      var a = document.activeElement;
+      focoPrevio = ['data-mas', 'data-menos', 'data-quitar'].reduce(function (acc, attr) {
+        return acc || (a.hasAttribute(attr) ? { attr: attr, valor: a.getAttribute(attr) } : null);
+      }, null);
+    }
+
     var n = Carrito.unidades();
     var conteo = u.$('#carrito-conteo');
     if (conteo) {
@@ -164,11 +182,13 @@
     cuerpo.innerHTML = Carrito.items().map(function (it) {
       var p = it.producto;
       var url = u.urlProducto(p);
-      var precio = u.tienePrecio(p)
-        ? u.formatoPrecio(p.precio * it.cantidad)
-        : 'Precio por WhatsApp';
+      var precio = !p.disponible
+        ? 'Agotado'
+        : u.tienePrecio(p)
+          ? u.formatoPrecio(p.precio * it.cantidad)
+          : 'Precio por WhatsApp';
       return (
-        '<article class="linea-item">' +
+        '<article class="linea-item' + (p.disponible ? '' : ' linea-agotada') + '">' +
           '<a class="linea-foto" href="' + url + '">' +
             '<img src="assets/img/' + p.imagenes[0] + '-400.webp" alt="' + u.esc(p.nombre) + '"' +
             ' loading="lazy" decoding="async" width="72" height="72">' +
@@ -200,7 +220,7 @@
       var elNota = u.$('#carrito-nota');
       if (t.completo) {
         elTotal.textContent = u.formatoPrecio(t.valor);
-        elNota.textContent = 'El envío se coordina por WhatsApp.';
+        elNota.textContent = 'La entrega y el pago se acuerdan por WhatsApp.';
       } else if (t.valor > 0) {
         elTotal.textContent = u.formatoPrecio(t.valor) + ' +';
         elNota.textContent = 'Hay artículos sin precio publicado: te lo confirmamos por WhatsApp.';
@@ -213,6 +233,32 @@
     // Aviso honesto cuando el navegador no deja guardar (Safari privado)
     var avisoAlmacen = u.$('#carrito-almacen');
     if (avisoAlmacen) avisoAlmacen.hidden = Carrito.almacenamientoDisponible();
+
+    // Si algo del carrito se agotó desde la última visita, se avisa y no se
+    // incluye en el pedido; el cliente decide si lo quita o pregunta por él.
+    var agotados = Carrito.agotados();
+    var avisoAgotado = u.$('#carrito-agotados');
+    if (avisoAgotado) {
+      avisoAgotado.hidden = agotados.length === 0;
+      if (agotados.length) {
+        avisoAgotado.textContent = agotados.length === 1
+          ? 'Una gorra de tu carrito se agotó y no irá en el pedido.'
+          : agotados.length + ' gorras de tu carrito se agotaron y no irán en el pedido.';
+      }
+    }
+    var btnFinalizar = u.$('#carrito-finalizar');
+    if (btnFinalizar) {
+      var hayPedibles = Carrito.pedibles().length > 0;
+      btnFinalizar.disabled = !hayPedibles;
+      btnFinalizar.setAttribute('aria-disabled', String(!hayPedibles));
+    }
+
+    // Devuelve el foco al mismo control tras el repintado
+    if (focoPrevio) {
+      var destino = cuerpo.querySelector('[' + focoPrevio.attr + '="' + focoPrevio.valor + '"]');
+      if (destino) destino.focus();
+      else u.enfocarPrimero(u.$('#carrito'));
+    }
   }
 
   /* ═══ Checkout ════════════════════════════════════════════════════════ */
@@ -227,7 +273,7 @@
 
     var t = Carrito.total();
     u.$('#checkout-resumen').innerHTML =
-      Carrito.items().map(function (it) {
+      Carrito.pedibles().map(function (it) {
         var p = it.producto;
         return '<div class="fila-r"><span>' + it.cantidad + ' × ' + u.esc(p.nombre) + '</span>' +
                '<span class="cifra">' + (u.tienePrecio(p)
@@ -315,7 +361,12 @@
       }, 1500);
     }
 
-    var ventana = window.open(msg.url, '_blank', 'noopener');
+    // OJO: no pasar 'noopener' como tercer argumento. Según la especificación,
+    // window.open devuelve null cuando se usa, aunque la pestaña se abra bien,
+    // y entonces el respaldo saltaría en TODOS los pedidos. La protección se
+    // consigue igual anulando opener después.
+    var ventana = window.open(msg.url, '_blank');
+    if (ventana) { try { ventana.opener = null; } catch (e) { /* otro origen */ } }
     cerrarCheckout();
 
     if (!ventana) {
@@ -327,23 +378,56 @@
   }
 
   // Si el navegador bloqueó la ventana, el pedido no se pierde
+  var soltarFocoRespaldo = null;
+
   function mostrarRespaldo(msg) {
     var caja = u.$('#respaldo');
     if (!caja) { u.toast('No se abrió WhatsApp. Inténtalo de nuevo.', 'aviso'); return; }
     caja.classList.add('abierto');
     u.bloquearScroll(true);
-    var copiar = u.$('#respaldo-copiar');
+    soltarFocoRespaldo = u.atraparFoco(caja);
+    setTimeout(function () { u.enfocarPrimero(caja); }, 240);
+
     var abrir = u.$('#respaldo-abrir');
     if (abrir) abrir.href = msg.url;
+
+    var copiar = u.$('#respaldo-copiar');
     if (copiar) {
       copiar.onclick = function () {
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(msg.texto).then(function () {
-            u.toast('Pedido copiado. Pégalo en el chat.', 'ok');
-          });
-        }
+        copiarTexto(msg.texto).then(function (ok) {
+          u.toast(
+            ok ? 'Pedido copiado. Pégalo en el chat.'
+               : 'No pudimos copiarlo. Selecciona el texto a mano.',
+            ok ? 'ok' : 'aviso'
+          );
+        });
       };
     }
+  }
+
+  // navigator.clipboard no existe fuera de HTTPS (ni en file://): sin este
+  // respaldo el botón "Copiar" no haría nada y el cliente se quedaría colgado.
+  function copiarTexto(texto) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(texto)
+        .then(function () { return true; })
+        .catch(function () { return copiarConTextarea(texto); });
+    }
+    return Promise.resolve(copiarConTextarea(texto));
+  }
+
+  function copiarConTextarea(texto) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = texto;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:-9999px;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) { return false; }
   }
 
   function cerrarRespaldo() {
@@ -351,6 +435,7 @@
     if (!caja || !caja.classList.contains('abierto')) return;
     caja.classList.remove('abierto');
     u.bloquearScroll(false);
+    if (soltarFocoRespaldo) { soltarFocoRespaldo(); soltarFocoRespaldo = null; }
   }
 
   /* ═══ Eventos ═════════════════════════════════════════════════════════ */
@@ -422,6 +507,10 @@
 
     var rCerrar = u.$('#respaldo-cerrar');
     if (rCerrar) rCerrar.addEventListener('click', cerrarRespaldo);
+    var rModal = u.$('#respaldo');
+    if (rModal) rModal.addEventListener('click', function (e) {
+      if (e.target === rModal) cerrarRespaldo();
+    });
 
     // Campos opcionales según config
     if (!CONFIG.checkout.pedirCiudad) { var c = u.$('#campo-ciudad'); if (c) c.hidden = true; }

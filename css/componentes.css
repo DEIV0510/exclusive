@@ -456,7 +456,7 @@
 .velo {
   position: fixed;
   inset: 0;
-  z-index: var(--z-drawer);
+  z-index: var(--z-velo);
   background: rgba(1, 4, 15, .68);
   backdrop-filter: blur(3px);
   opacity: 0;
@@ -509,6 +509,11 @@
   grid-template-columns: 72px 1fr;
   gap: var(--e3);
 }
+/* Línea de un producto que se agotó después de agregarse al carrito */
+.linea-agotada .linea-foto img { filter: grayscale(1) brightness(.55); }
+.linea-agotada .linea-nombre { color: var(--tx-3); }
+.linea-agotada .linea-precio { color: var(--error); font-weight: 700; }
+
 .linea-foto {
   width: 72px;
   height: 72px;
@@ -643,7 +648,9 @@
   transition: border-color var(--t-rapido);
 }
 .campo textarea { min-height: 74px; resize: vertical; }
-.campo input:focus, .campo textarea:focus { border-color: var(--brillo); outline: none; }
+/* Sin outline:none — borrarlo dejaba a quien navega con teclado sin saber
+   dónde está. Se refuerza el borde y se conserva el anillo del :focus-visible. */
+.campo input:focus, .campo textarea:focus { border-color: var(--brillo); }
 .campo input[aria-invalid='true'] { border-color: var(--error); }
 .campo .error {
   display: none;

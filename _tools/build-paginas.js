@@ -49,14 +49,28 @@ const pesos = new Intl.NumberFormat(CONFIG.moneda.locale, {
 });
 const precioTexto = (v) => pesos.format(v).replace(/ /g, ' ');
 
+// Corta por la última palabra completa: una meta description partida a mitad
+// de palabra se ve mal en el resultado de búsqueda y en la vista previa.
+function recortar(texto, max) {
+  const t = String(texto).trim();
+  if (t.length <= max) return t;
+  const corte = t.slice(0, max - 1);
+  const espacio = corte.lastIndexOf(' ');
+  return (espacio > max * 0.6 ? corte.slice(0, espacio) : corte).replace(/[,;:.\s]+$/, '') + '…';
+}
+
 function altDe(p, i) {
   const colores = (p.colores || []).join(' y ').toLowerCase();
   const vistas = ['vista frontal', 'vista lateral', 'interior'];
   return `${p.nombre} — gorra ${p.tipo.toLowerCase()} ${p.marca} color ${colores}, ${vistas[i] || 'detalle'}`;
 }
 
-/* ── <head> ────────────────────────────────────────────────────────────── */
-function cabeza({ titulo, descripcion, ruta, imagen, jsonld, precargarImagen }) {
+/* ── <head> ──────────────────────────────────────────────────────────────
+   La imagen de Open Graph es SIEMPRE un JPG de 1200x630 generado a medida.
+   Poner ahí el WebP del producto rompía la vista previa: WhatsApp y Facebook
+   no siempre leen WebP y, además, las medidas declaradas (630) no coincidían
+   con las reales (940 a 1458), así que la miniatura salía cortada.          */
+function cabeza({ titulo, descripcion, ruta, imagen, imagenAlt, jsonld, precargarImagen, tipoOg }) {
   const canonical = ruta === 'index.html' ? BASE + '/' : abs(ruta);
   const img = imagen || abs('assets/logo/og-image.jpg');
   return `<meta charset="utf-8">
@@ -72,19 +86,21 @@ function cabeza({ titulo, descripcion, ruta, imagen, jsonld, precargarImagen }) 
 
 <meta property="og:site_name" content="${esc(CONFIG.marca)}">
 <meta property="og:locale" content="es_CO">
-<meta property="og:type" content="website">
+<meta property="og:type" content="${tipoOg || 'website'}">
 <meta property="og:url" content="${canonical}">
 <meta property="og:title" content="${esc(titulo)}">
 <meta property="og:description" content="${esc(descripcion)}">
 <meta property="og:image" content="${img}">
+<meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="${esc(CONFIG.marca)}">
+<meta property="og:image:alt" content="${esc(imagenAlt || CONFIG.marca)}">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(titulo)}">
 <meta name="twitter:description" content="${esc(descripcion)}">
 <meta name="twitter:image" content="${img}">
+<meta name="twitter:image:alt" content="${esc(imagenAlt || CONFIG.marca)}">
 
 <link rel="icon" href="assets/logo/favicon-48.png" sizes="48x48">
 <link rel="icon" href="assets/logo/icono-192.png" sizes="192x192">
@@ -291,12 +307,24 @@ function construirHome() {
           <p>${esc(f.r)}</p>
         </details>`).join('\n        ');
 
-  const cuerpo = leer('cuerpo-home.html').replace('{{FAQ}}', faq);
+  // Las dos partes del titular vienen separadas desde config.js: la segunda
+  // se pinta con la cursiva de acento. Nada de partir la frase adivinando.
+  const acento = (CONFIG.textos.heroTituloAcento || '').trim();
+  const heroTitulo = esc(CONFIG.textos.heroTitulo.trim()) +
+    (acento ? ' <span class="script">' + esc(acento) + '</span>' : '');
+
+  const cuerpo = leer('cuerpo-home.html')
+    .replace('{{FAQ}}', faq)
+    .replace('{{HERO_EYEBROW}}', esc(CONFIG.textos.heroEyebrow))
+    .replace('{{HERO_TITULO}}', heroTitulo)
+    .replace('{{HERO_SUB}}', esc(CONFIG.textos.heroSub))
+    .replace('{{HERO_CTA}}', esc(CONFIG.textos.heroCta))
+    .replace('{{HERO_CTA_SEC}}', esc(CONFIG.textos.heroCtaSec));
 
   const precarga = `<link rel="preload" as="image" fetchpriority="high"
       href="assets/img/ohtani-1-760.webp"
-      imagesrcset="assets/img/ohtani-1-400.webp 400w, assets/img/ohtani-1-760.webp 760w, assets/img/ohtani-1-1200.webp 1200w"
-      imagesizes="100vw" type="image/webp">`;
+      imagesrcset="assets/img/ohtani-1-400.webp 400w, assets/img/ohtani-1-760.webp 760w"
+      imagesizes="(min-width: 900px) 54vw, 100vw" type="image/webp">`;
 
   const head = cabeza({
     titulo: `Gorras New Era en ${CONFIG.ciudad} | ${CONFIG.marca}`,
@@ -322,11 +350,18 @@ function construirCatalogo() {
 
   const cuerpo = leer('cuerpo-catalogo.html').replace('{{NOSCRIPT_LISTA}}', noscript);
 
+  const primera = PRODUCTOS[0];
+  const precargaCat = primera ? `<link rel="preload" as="image" fetchpriority="high"
+      href="assets/img/${primera.imagenes[0]}-400.webp"
+      imagesrcset="assets/img/${primera.imagenes[0]}-400.webp 400w, assets/img/${primera.imagenes[0]}-760.webp 760w"
+      imagesizes="(min-width: 900px) 280px, 46vw" type="image/webp">` : '';
+
   const head = cabeza({
     titulo: `Catálogo de gorras | ${CONFIG.marca}`,
     descripcion: `Todas las gorras disponibles en ${CONFIG.marca}. Filtra por marca, tipo y color, y pide por WhatsApp desde ${CONFIG.ciudad}.`,
     ruta: 'catalogo.html',
     jsonld: jsonldCatalogo(),
+    precargarImagen: precargaCat,
   });
 
   return documento({ head, pagina: 'catalogo', cuerpo, scripts: scripts() });
@@ -346,7 +381,7 @@ function construirProducto(p) {
     ? '<div class="miniaturas" role="group" aria-label="Fotos del producto">' +
       p.imagenes.map((im, i) =>
         `<button type="button" class="mini" aria-current="${i === 0}" aria-label="Ver la foto ${i + 1} de ${p.imagenes.length}">` +
-        `<img src="assets/img/${im}-400.webp" alt="" width="68" height="68" loading="lazy" decoding="async"></button>`
+        `<img src="assets/img/${im}-160.webp" alt="" width="68" height="68" loading="lazy" decoding="async"></button>`
       ).join('') + '</div>'
     : '';
 
@@ -355,7 +390,7 @@ function construirProducto(p) {
       (p.precioAntes && p.precioAntes > p.precio
         ? `<span class="antes cifra">${precioTexto(p.precioAntes)}</span>` : '')
     : `<span class="consultar">Precio por WhatsApp</span>
-          <span class="nota">Te lo confirmamos al instante por el chat.</span>`;
+          <span class="nota">Escríbenos y te lo confirmamos.</span>`;
 
   const precioCorto = tienePrecio(p) ? precioTexto(p.precio) : 'Precio por WhatsApp';
 
@@ -433,9 +468,11 @@ function construirProducto(p) {
 
   const head = cabeza({
     titulo: `${p.nombre} | ${CONFIG.marca}`,
-    descripcion: p.descripcion.slice(0, 155),
+    descripcion: recortar(p.descripcion, 155),
     ruta: urlProducto(p),
-    imagen: abs(`assets/img/${p.imagenes[0]}-1200.webp`),
+    imagen: abs(`assets/img/og-${p.imagenes[0]}.jpg`),
+    imagenAlt: altDe(p, 0),
+    tipoOg: 'product',
     jsonld: jsonldProducto(p),
     precargarImagen: precarga,
   });
@@ -497,6 +534,7 @@ ${urls.map((u) => `  <url>
 function construirRobots() {
   return `User-agent: *
 Allow: /
+Disallow: /_tools/
 
 Sitemap: ${abs('sitemap.xml')}
 `;

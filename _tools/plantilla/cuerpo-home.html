@@ -5,8 +5,8 @@
     <div class="hero-foto">
       <picture>
         <source type="image/webp"
-                srcset="assets/img/ohtani-1-400.webp 400w, assets/img/ohtani-1-760.webp 760w, assets/img/ohtani-1-1200.webp 1200w"
-                sizes="100vw">
+                srcset="assets/img/ohtani-1-400.webp 400w, assets/img/ohtani-1-760.webp 760w"
+                sizes="(min-width: 900px) 54vw, 100vw">
         <img src="assets/img/ohtani-1-760.jpg"
              alt="Gorra New Era 9FIFTY Shohei Ohtani, corona crema con visera azul royal"
              width="1200" height="940" fetchpriority="high" decoding="async">
@@ -31,17 +31,17 @@
     </svg>
 
     <div class="contenedor hero-txt">
-      <span class="eyebrow">Medellín · Nacionales e importadas</span>
-      <h1 class="t-hero">Tu gorra <span class="script">habla primero</span></h1>
-      <p class="hero-sub">Gorras seleccionadas una por una. Pedidos por WhatsApp.</p>
+      <span class="eyebrow">{{HERO_EYEBROW}}</span>
+      <h1 class="t-hero">{{HERO_TITULO}}</h1>
+      <p class="hero-sub">{{HERO_SUB}}</p>
       <div class="hero-botones">
         <a class="btn btn--primario" href="#disponibles">
-          Ver las gorras
+          {{HERO_CTA}}
           <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
         </a>
         <a class="btn btn--linea" data-wa href="#" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-whatsapp"></use></svg>
-          Escribir
+          {{HERO_CTA_SEC}}
         </a>
       </div>
     </div>

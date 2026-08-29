@@ -78,12 +78,15 @@
   --t-medio: 220ms cubic-bezier(.2, 0, .2, 1);
   --t-salida: 150ms cubic-bezier(.4, 0, 1, 1);
 
-  /* Capas */
+  /* Capas.
+     Cada panel va POR ENCIMA del velo que lo acompaña; si el velo quedara
+     encima, se tragaría los clics del panel y este sería inservible. */
   --z-header: 100;
   --z-barra: 90;
-  --z-panel: 300;
-  --z-drawer: 400;
-  --z-modal: 500;
+  --z-velo: 300;      /* velo compartido de panel y carrito */
+  --z-panel: 320;     /* panel de filtros */
+  --z-drawer: 340;    /* cajón del carrito */
+  --z-modal: 500;     /* checkout, respaldo, zoom */
   --z-toast: 600;
   --z-carga: 900;
 
@@ -121,6 +124,12 @@ body {
   /* deja sitio a la barra inferior fija de móvil */
   padding-bottom: calc(var(--h-barra) + env(safe-area-inset-bottom));
 }
+
+/* Bloqueo de scroll mientras hay un panel abierto. Va en <html> y en <body>
+   porque <html> lleva overflow-x: clip y eso corta la propagación del
+   overflow del body al viewport. */
+html.sin-scroll,
+html.sin-scroll body { overflow: hidden; }
 
 img, svg, video, picture { display: block; max-width: 100%; }
 img { height: auto; }
@@ -227,24 +236,6 @@ h1, h2, h3, h4 {
   opacity: .8;
 }
 
-/* ── Recurso gráfico 2: arco de visera ─────────────────────────────────────
-   Curva sutil al pie de las secciones oscuras; evoca el borde de la visera. */
-.arco {
-  position: relative;
-}
-.arco::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: -1px;
-  width: 140%;
-  height: 46px;
-  transform: translateX(-50%);
-  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-  border-top: 1px solid var(--linea);
-  pointer-events: none;
-}
-
 /* ── Recurso gráfico 3: trama de tela ──────────────────────────────────────
    Textura diagonal muy tenue, como el tejido de la corona de la gorra. */
 .trama {
@@ -292,7 +283,7 @@ h1, h2, h3, h4 {
 .carga-caja { display: grid; place-items: center; gap: var(--e4); }
 
 .carga-emblema {
-  width: clamp(124px, 30vw, 168px);
+  width: clamp(104px, 26vw, 132px);
   aspect-ratio: 1;
   filter: drop-shadow(0 0 28px rgba(46, 144, 255, .35));
   animation: emblema-entra 620ms cubic-bezier(.16, .84, .34, 1) both;
@@ -305,7 +296,7 @@ h1, h2, h3, h4 {
 /* Barrido diagonal: el brillo que recorre la visera */
 .carga-brillo {
   position: absolute;
-  width: clamp(124px, 30vw, 168px);
+  width: clamp(104px, 26vw, 132px);
   aspect-ratio: 1;
   border-radius: 50%;
   overflow: hidden;
@@ -334,7 +325,4 @@ h1, h2, h3, h4 {
 }
 
 /* ── Utilidades ────────────────────────────────────────────────────────── */
-.oculto { display: none !important; }
 .cifra { font-variant-numeric: tabular-nums; }
-.pila { display: grid; }
-.fila { display: flex; align-items: center; }

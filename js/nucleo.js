@@ -28,12 +28,16 @@
     return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return MAPA_ESC[c]; });
   }
 
-  // Quita tildes y pasa a minúsculas: "Béisbol" -> "beisbol"
+  // Quita tildes y pasa a minúsculas: "Béisbol" -> "beisbol".
+  // La expresión se construye desde texto para que no dependa de cómo se
+  // guarde este archivo (los signos diacríticos sueltos son invisibles).
+  var RE_TILDES = new RegExp('[\u0300-\u036f]', 'g');
+
   function normalizar(t) {
     return String(t == null ? '' : t)
       .toLowerCase()
       .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '');
+      .replace(RE_TILDES, '');
   }
 
   function debounce(fn, ms) {
@@ -160,7 +164,10 @@
   var bloqueos = 0;
   function bloquearScroll(activar) {
     bloqueos = Math.max(0, bloqueos + (activar ? 1 : -1));
-    document.body.style.overflow = bloqueos > 0 ? 'hidden' : '';
+    // Se marca <html>, no solo <body>: como <html> lleva overflow-x: clip, un
+    // overflow:hidden puesto únicamente en el body NO detiene el scroll de la
+    // página y el fondo se seguiría desplazando detrás del panel abierto.
+    document.documentElement.classList.toggle('sin-scroll', bloqueos > 0);
   }
 
   /* ── Trampa de foco para paneles modales ─────────────────────────────── */
@@ -245,6 +252,14 @@
       });
       if (p.precio !== null && !tienePrecio(p)) {
         errores.push(d + ': "precio" debe ser un número mayor que 0, o null');
+      }
+      // 165.000 en JavaScript vale 165, no ciento sesenta y cinco mil: el
+      // carrito totalizaría cifras absurdas sin que nadie se diera cuenta.
+      if (typeof p.precio === 'number' && p.precio > 0 && p.precio < 1000) {
+        errores.push(
+          d + ': el precio ' + p.precio + ' parece mal escrito. Los precios van ' +
+          'sin puntos ni comas: 165000, no 165.000'
+        );
       }
     });
     if (errores.length) {

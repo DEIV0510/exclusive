@@ -79,10 +79,12 @@ window.ECM.CONFIG = {
   /* ── 7. TEXTOS DE LA HOME ─────────────────────────────────────────────── */
   textos: {
     heroEyebrow: 'Medellín · Nacionales e importadas',
-    heroTitulo: 'Tu gorra habla primero',
-    heroSub: 'Gorras nacionales e importadas, seleccionadas en Medellín.',
+    // El titular va en dos partes: la segunda se pinta en cursiva de acento
+    heroTitulo: 'Tu gorra',
+    heroTituloAcento: 'habla primero',
+    heroSub: 'Seleccionadas una por una. Pedidos por WhatsApp.',
     heroCta: 'Ver las gorras',
-    heroCtaSec: 'Escribir por WhatsApp',
+    heroCtaSec: 'Escribir',
   },
 
   /* ── 8. BLOQUES DE CONFIANZA ──────────────────────────────────────────────
@@ -116,7 +118,7 @@ window.ECM.CONFIG = {
     },
     {
       p: '¿Cómo sé si una gorra está disponible?',
-      r: 'El catálogo marca como agotadas las que no tenemos. Si quieres estar seguro antes de pedir, escríbenos por WhatsApp con el nombre del modelo y te confirmamos.',
+      r: 'Escríbenos por WhatsApp con el nombre del modelo y te confirmamos la disponibilidad antes de que hagas el pedido.',
     },
     {
       p: '¿Qué marcas manejan?',

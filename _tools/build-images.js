@@ -15,10 +15,11 @@ const OUT_LOGO = path.join(__dirname, '..', 'assets', 'logo');
 fs.mkdirSync(OUT, { recursive: true });
 fs.mkdirSync(OUT_LOGO, { recursive: true });
 
-// 400 = tarjeta en móvil · 760 = tarjeta grande y ficha · 1200 = lente de zoom.
+// 160 = miniaturas de la ficha · 400 = tarjeta en móvil · 760 = tarjeta grande
+// y ficha · 1200 = lente de zoom.
 // Las fotos originales son pequeñas (266–600 px de ancho), así que 1200 es un
 // reescalado con lanczos + enfoque: sirve para el zoom, no añade detalle real.
-const ANCHOS = [400, 760, 1200];
+const ANCHOS = [160, 400, 760, 1200];
 
 /* Recortes: cada foto original -> una o dos gorras */
 const RECORTES = [
@@ -75,6 +76,20 @@ async function procesarProducto(job) {
     .jpeg({ quality: 82, mozjpeg: true })
     .toFile(path.join(OUT, `${job.out}-760.jpg`));
 
+  // Portada 1200x630 para compartir por WhatsApp y redes. Se hace aparte
+  // porque la foto del producto no tiene esas proporciones: recortarla al
+  // vuelo dejaría la gorra cortada en la vista previa.
+  await sharp({
+    create: { width: 1200, height: 630, channels: 3, background: '#060D22' },
+  })
+    .composite([{
+      input: await sharp(conVineta)
+        .resize({ width: 1200, height: 630, fit: 'cover', position: 'centre', kernel: 'lanczos3' })
+        .toBuffer(),
+    }])
+    .jpeg({ quality: 84, mozjpeg: true })
+    .toFile(path.join(OUT, `og-${job.out}.jpg`));
+
   // LQIP en base64 (24px) para el skeleton
   const lqip = await sharp(conVineta).resize({ width: 24 }).blur(1.2).webp({ quality: 40 }).toBuffer();
   return { out: job.out, lqip: `data:image/webp;base64,${lqip.toString('base64')}`, w: m.width, h: m.height };
@@ -97,8 +112,7 @@ async function procesarLogo() {
   // El emblema es un raster con degradados finos: pasar de q=80 casi no aporta
   // a la vista y triplica el peso, y este archivo entra en la pantalla de carga.
   const tamsLogo = [
-    { w: 384, q: 78 },   // pantalla de carga (se muestra a 190 px, cubre pantallas 2x)
-    { w: 256, q: 80 },   // footer y menú
+    { w: 256, q: 80 },   // pantalla de carga, footer y menú
     { w: 128, q: 82 },   // header
   ];
   for (const t of tamsLogo) {

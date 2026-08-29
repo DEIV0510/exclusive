@@ -46,9 +46,18 @@
     });
 
     // Zoom: se abre la imagen grande y se puede desplazar dentro del visor
-    visor.addEventListener('click', function () {
+    function ampliar() {
       var i = parseInt(visor.getAttribute('data-indice') || '0', 10);
       abrirZoom(producto.imagenes[i] || producto.imagenes[0]);
+    }
+    visor.addEventListener('click', ampliar);
+    // El visor es role="button": debe responder a Enter y a Espacio como
+    // cualquier botón, o el teclado no puede ampliar la foto.
+    visor.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
+        ev.preventDefault();
+        ampliar();
+      }
     });
 
     // Deslizar con el dedo entre fotos

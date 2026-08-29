@@ -38,18 +38,9 @@
     return u.waUrl(l.join('\n'));
   }
 
-  /* ── Aviso de reingreso para un producto agotado ─────────────────────── */
-  function avisarme(p) {
-    return u.waUrl(
-      'Hola *' + CONFIG.marca + '*, la gorra *' + p.nombre + '* aparece agotada.\n' +
-      'Enlace: ' + u.urlAbsoluta(u.urlProducto(p)) + '\n\n' +
-      '¿Me avisan cuando vuelva a entrar?'
-    );
-  }
-
   /* ── Pedido completo del carrito ─────────────────────────────────────── */
   function pedido(datos) {
-    var items = ECM.Carrito.items();
+    var items = ECM.Carrito.pedibles();
     var t = ECM.Carrito.total();
     var l = [];
 
@@ -100,7 +91,6 @@
   ECM.WA = {
     general: general,
     consulta: consulta,
-    avisarme: avisarme,
     pedido: pedido,
   };
 })();

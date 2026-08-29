@@ -69,6 +69,17 @@
     }).filter(function (i) { return i.producto; });
   }
 
+  // Líneas de productos que pasaron a AGOTADO después de guardarse.
+  // No se borran solas (el cliente decide), pero sí se marcan y se excluyen
+  // del pedido para no pedir algo que ya no hay.
+  function agotados() {
+    return items().filter(function (i) { return !i.producto.disponible; });
+  }
+
+  function pedibles() {
+    return items().filter(function (i) { return i.producto.disponible; });
+  }
+
   function unidades() {
     return lineas.reduce(function (s, l) { return s + l.cantidad; }, 0);
   }
@@ -79,7 +90,7 @@
   // parcial = true cuando hay productos sin precio cargado.
   function total() {
     var suma = 0, parcial = false, conPrecio = 0;
-    items().forEach(function (i) {
+    pedibles().forEach(function (i) {
       if (u.tienePrecio(i.producto)) { suma += i.producto.precio * i.cantidad; conPrecio++; }
       else parcial = true;
     });
@@ -141,8 +152,19 @@
     avisar();
   });
 
+  // Al volver con el botón "atrás", el navegador puede restaurar la página
+  // desde su caché sin ejecutar el JS otra vez. Sin esto, la página seguiría
+  // con el carrito viejo en memoria y la siguiente escritura borraría lo que
+  // el cliente agregó en las páginas siguientes.
+  window.addEventListener('pageshow', function (ev) {
+    if (!ev.persisted) return;
+    cargar();
+    avisar();
+  });
+
   ECM.Carrito = {
-    cargar: cargar, items: items, unidades: unidades, vacio: vacio, total: total,
+    cargar: cargar, items: items, agotados: agotados, pedibles: pedibles,
+    unidades: unidades, vacio: vacio, total: total,
     cantidadDe: cantidadDe, agregar: agregar, fijar: fijar, sumar: sumar,
     quitar: quitar, vaciar: vaciar, alCambiar: alCambiar,
     almacenamientoDisponible: function () { return u.almacen.disponible; },

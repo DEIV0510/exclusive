@@ -59,7 +59,7 @@ window.ECM.PRODUCTOS = [
     nuevo: true,
     exclusivo: false,
     colores: ['Crema', 'Azul Royal', 'Rojo'],
-    talla: 'Talla única ajustable',
+    talla: 'Ajustable (cierre snapback)',
     descripcion:
       'Corona crema de perfil alto, visera plana azul royal y botón rojo a contraste, con un bordado frontal dedicado a Shohei Ohtani: su silueta al bate, su nombre y el kanji japonés.',
     caracteristicas: [
@@ -88,14 +88,14 @@ window.ECM.PRODUCTOS = [
     nuevo: true,
     exclusivo: false,
     colores: ['Negro', 'Gris', 'Rojo'],
-    talla: 'Talla única ajustable',
+    talla: 'Ajustable (cierre snapback)',
     descripcion:
-      'Corona negra con el clásico NY bordado en gris, atravesado por rosas rojas con hojas blancas. Atrás, la placa metálica 9FIFTY SNAPBACK remata el acabado.',
+      'Corona negra con el clásico NY bordado en gris, atravesado por rosas rojas con hojas blancas. Silueta 9FIFTY de visera plana y cierre snapback.',
     caracteristicas: [
       'Corona negra lisa',
       'Logo NY bordado en gris',
       'Rosas rojas con hojas blancas bordadas sobre el frente',
-      'Placa metálica 9FIFTY SNAPBACK en la parte trasera',
+      'Adhesivo 9FIFTY SNAPBACK sobre la visera',
       'Cierre snapback ajustable',
     ],
     imagenes: ['ny-1', 'ny-2'],
@@ -117,7 +117,7 @@ window.ECM.PRODUCTOS = [
     nuevo: true,
     exclusivo: false,
     colores: ['Negro', 'Blanco', 'Rojo'],
-    talla: 'Talla única ajustable',
+    talla: 'Ajustable (cierre snapback)',
     descripcion:
       'Corona negra con el logo Sox bordado en blanco y un ramo de rosas rojas con tallo verde al costado. El ribete rojo bajo la visera cierra el contraste.',
     caracteristicas: [
