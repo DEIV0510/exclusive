@@ -1,0 +1,340 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   EXCLUSIVE CAPS MED · base
+   Tokens · reset · tipografía · utilidades · layout general
+   Los colores están muestreados del PNG del logo y verificados contra WCAG AA.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Tipografías auto-alojadas: cero peticiones a terceros ─────────────── */
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+  src: url('../assets/fonts/archivo-var-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+                 U+02DC, U+2000-206F, U+20AC, U+2122, U+2212, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/instrument-serif-italic.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2122;
+}
+
+/* ── Tokens ────────────────────────────────────────────────────────────── */
+:root {
+  /* Superficies */
+  --navy-950: #01040F;
+  --navy-900: #060D22;
+  --navy-800: #0C1730;
+  --navy-700: #142344;
+  --navy-600: #1B2E52;
+
+  /* Marca */
+  --azul: #0C63C9;
+  --azul-h: #1272DD;
+  --brillo: #2E90FF;
+  --brillo-h: #55A5FF;
+  --hielo: #A9E1FD;
+  --crema: #EFE3CC;
+
+  /* Texto */
+  --tx: #F4F6FA;
+  --tx-2: #C2CDE0;
+  --tx-3: #8A9AB5;
+  --sobre-azul: #FFFFFF;
+  --sobre-claro: #01040F;
+
+  /* Líneas: -deco es decorativa, -ui es para controles reales (3.6:1) */
+  --linea: #1E3358;
+  --linea-2: #2C4A7A;
+  --linea-ui: #56719E;
+
+  /* Semánticos */
+  --wa: #25D366;
+  --error: #FF7A7A;
+
+  /* Tipografía */
+  --f-display: 'Archivo', 'Arial Narrow', system-ui, sans-serif;
+  --f-texto: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-script: 'Instrument Serif', Georgia, serif;
+
+  /* Ritmo 4 / 8 */
+  --e1: 4px;  --e2: 8px;  --e3: 12px; --e4: 16px; --e5: 20px;
+  --e6: 24px; --e7: 32px; --e8: 48px; --e9: 64px; --e10: 96px;
+
+  --r-sm: 8px;
+  --r: 14px;
+  --r-lg: 20px;
+  --r-full: 999px;
+
+  --sombra: 0 8px 24px rgba(0, 0, 0, .38);
+  --sombra-alta: 0 20px 56px rgba(0, 0, 0, .55);
+
+  --t-rapido: 140ms cubic-bezier(.2, 0, .2, 1);
+  --t-medio: 220ms cubic-bezier(.2, 0, .2, 1);
+  --t-salida: 150ms cubic-bezier(.4, 0, 1, 1);
+
+  /* Capas */
+  --z-header: 100;
+  --z-barra: 90;
+  --z-panel: 300;
+  --z-drawer: 400;
+  --z-modal: 500;
+  --z-toast: 600;
+  --z-carga: 900;
+
+  --ancho: 1200px;
+  --h-header: 56px;
+  --h-barra: 56px;
+}
+
+@media (min-width: 900px) {
+  :root { --h-header: 68px; }
+}
+
+/* ── Reset ─────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  color-scheme: dark;
+  background: var(--navy-900);
+  /* clip y NO hidden: hidden anularía todos los position:sticky del sitio */
+  overflow-x: clip;
+}
+
+body {
+  font-family: var(--f-texto);
+  font-size: 16px;
+  line-height: 1.55;
+  font-variation-settings: 'wdth' 100;
+  color: var(--tx);
+  background: var(--navy-900);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+  min-height: 100svh;
+  /* deja sitio a la barra inferior fija de móvil */
+  padding-bottom: calc(var(--h-barra) + env(safe-area-inset-bottom));
+}
+
+img, svg, video, picture { display: block; max-width: 100%; }
+img { height: auto; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { background: none; border: 0; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+ul, ol { list-style: none; padding: 0; }
+
+:focus-visible {
+  outline: 2px solid var(--hielo);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+::selection { background: var(--azul); color: #fff; }
+
+::-webkit-scrollbar { width: 10px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--navy-950); }
+::-webkit-scrollbar-thumb { background: var(--navy-600); border-radius: var(--r-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--azul); }
+
+/* ── Tipografía ────────────────────────────────────────────────────────── */
+h1, h2, h3, h4 {
+  font-family: var(--f-display);
+  line-height: 1.06;
+  letter-spacing: -.018em;
+  font-weight: 800;
+  font-variation-settings: 'wdth' 112, 'wght' 800;
+  text-wrap: balance;
+}
+
+.t-hero  { font-size: clamp(30px, 7.6vw, 62px); text-transform: uppercase; }
+.t-sec   { font-size: clamp(24px, 4.4vw, 40px); text-transform: uppercase; }
+.t-sub   { font-size: clamp(18px, 2.6vw, 23px); font-variation-settings: 'wdth' 106, 'wght' 700; }
+
+.script {
+  font-family: var(--f-script);
+  font-style: italic;
+  font-weight: 400;
+  font-variation-settings: normal;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  font-variation-settings: 'wdth' 100, 'wght' 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--brillo);
+}
+
+.parrafo { color: var(--tx-2); max-width: 60ch; }
+.meta { font-size: 13px; color: var(--tx-3); }
+
+/* ── Layout ────────────────────────────────────────────────────────────── */
+.contenedor {
+  width: 100%;
+  max-width: var(--ancho);
+  margin-inline: auto;
+  padding-inline: var(--e4);
+}
+
+.seccion { padding-block: clamp(40px, 7vw, 80px); }
+.seccion--ceñida { padding-block: clamp(28px, 5vw, 56px); }
+
+.seccion-cabeza {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--e4);
+  flex-wrap: wrap;
+  margin-bottom: var(--e6);
+}
+.seccion-cabeza .eyebrow { margin-bottom: var(--e2); }
+.seccion-cabeza p { margin-top: var(--e2); }
+
+.solo-lectores {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; overflow: hidden; clip: rect(0 0 0 0);
+  white-space: nowrap; border: 0;
+}
+
+.saltar {
+  position: absolute; left: var(--e4); top: -60px; z-index: 999;
+  background: var(--azul); color: #fff;
+  padding: var(--e3) var(--e4); border-radius: 0 0 var(--r-sm) var(--r-sm);
+  font-weight: 700; transition: top var(--t-rapido);
+}
+.saltar:focus { top: 0; }
+
+/* ── Recurso gráfico 1: hilo de costura ────────────────────────────────────
+   Línea punteada como la pespunte de una visera. Separa secciones sin peso. */
+.costura {
+  height: 1px;
+  border: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--linea-2) 0 7px,
+    transparent 7px 14px
+  );
+  opacity: .8;
+}
+
+/* ── Recurso gráfico 2: arco de visera ─────────────────────────────────────
+   Curva sutil al pie de las secciones oscuras; evoca el borde de la visera. */
+.arco {
+  position: relative;
+}
+.arco::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  width: 140%;
+  height: 46px;
+  transform: translateX(-50%);
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  border-top: 1px solid var(--linea);
+  pointer-events: none;
+}
+
+/* ── Recurso gráfico 3: trama de tela ──────────────────────────────────────
+   Textura diagonal muy tenue, como el tejido de la corona de la gorra. */
+.trama {
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      rgba(169, 225, 253, .028) 0 1px,
+      transparent 1px 5px
+    );
+}
+
+/* ── Animación de entrada ──────────────────────────────────────────────────
+   Solo se activa si el JS marcó <html class="js">. Sin JS nada se esconde. */
+.js .revelar { opacity: 0; transform: translateY(12px); }
+.js .revelar.visible {
+  opacity: 1;
+  transform: none;
+  transition: opacity 380ms ease-out, transform 380ms cubic-bezier(.2, 0, .2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .js .revelar { opacity: 1 !important; transform: none !important; }
+}
+
+/* ── Pantalla de carga ─────────────────────────────────────────────────────
+   Se retira en cuanto hay contenido pintado. Nunca retrasa la página:
+   si el JS falla, el <noscript> y el temporizador de seguridad la quitan. */
+#carga {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-carga);
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 42%, var(--navy-800), var(--navy-950) 72%);
+  transition: opacity 320ms ease, visibility 320ms;
+}
+#carga.fuera { opacity: 0; visibility: hidden; pointer-events: none; }
+
+.carga-caja { display: grid; place-items: center; gap: var(--e4); }
+
+.carga-emblema {
+  width: clamp(124px, 30vw, 168px);
+  aspect-ratio: 1;
+  filter: drop-shadow(0 0 28px rgba(46, 144, 255, .35));
+  animation: emblema-entra 620ms cubic-bezier(.16, .84, .34, 1) both;
+}
+@keyframes emblema-entra {
+  from { opacity: 0; transform: scale(.86); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Barrido diagonal: el brillo que recorre la visera */
+.carga-brillo {
+  position: absolute;
+  width: clamp(124px, 30vw, 168px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  pointer-events: none;
+}
+.carga-brillo::after {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(100deg, transparent 43%, rgba(169, 225, 253, .5) 50%, transparent 57%);
+  animation: barrido 1.05s ease-in-out .15s infinite;
+}
+@keyframes barrido {
+  from { transform: translateX(-72%); }
+  to   { transform: translateX(72%); }
+}
+
+.carga-marca {
+  font-family: var(--f-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .38em;
+  text-transform: uppercase;
+  color: var(--tx-3);
+  padding-left: .38em;
+}
+
+/* ── Utilidades ────────────────────────────────────────────────────────── */
+.oculto { display: none !important; }
+.cifra { font-variant-numeric: tabular-nums; }
+.pila { display: grid; }
+.fila { display: flex; align-items: center; }

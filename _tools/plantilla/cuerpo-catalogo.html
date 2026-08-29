@@ -1,0 +1,115 @@
+<main id="principal">
+
+  <div class="contenedor">
+    <nav class="migas" aria-label="Ruta">
+      <a href="index.html">Inicio</a>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
+      <span aria-current="page">Catálogo</span>
+    </nav>
+    <h1 class="t-sec" style="margin-bottom:6px">Todas las gorras</h1>
+    <p class="meta" style="margin-bottom:16px">Busca y filtra por marca, tipo o color.</p>
+  </div>
+
+  <!-- ══ BARRA DE FILTROS ══ -->
+  <div class="barra-filtros">
+    <div class="contenedor filtros-fila">
+      <button type="button" class="btn-filtros" id="btn-filtros" data-activos="0"
+              aria-expanded="false" aria-controls="panel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-filtro"></use></svg>
+        <span>Filtros</span>
+        <span class="n cifra">0</span>
+      </button>
+
+      <div class="buscador">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-buscar"></use></svg>
+        <label class="solo-lectores" for="buscar">Buscar gorras</label>
+        <input type="search" id="buscar" placeholder="Busca por modelo, marca o color" autocomplete="off">
+        <button type="button" class="limpiar" id="buscar-limpiar" aria-label="Borrar la búsqueda">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-cerrar"></use></svg>
+        </button>
+      </div>
+
+      <label class="solo-lectores" for="orden">Ordenar por</label>
+      <select class="select-orden" id="orden">
+        <option value="recientes">Más recientes</option>
+        <option value="destacados">Destacados</option>
+        <option value="nombre">Nombre A–Z</option>
+        <option value="precio-asc" data-orden-precio>Precio: de menor a mayor</option>
+        <option value="precio-desc" data-orden-precio>Precio: de mayor a menor</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="contenedor">
+    <div class="resultados">
+      <p id="resultados-texto" aria-live="polite">Cargando gorras…</p>
+      <div class="activos" id="activos"></div>
+    </div>
+
+    <div class="rejilla" id="grid">
+      <noscript>
+        <p class="parrafo">
+          Para filtrar y buscar necesitas activar JavaScript.
+          Mientras tanto, puedes ver cada gorra en su página:
+        </p>
+      </noscript>
+      {{NOSCRIPT_LISTA}}
+    </div>
+  </div>
+
+  <div style="height:48px"></div>
+</main>
+
+<!-- ══ PANEL DE FILTROS ══ -->
+<div class="velo" id="velo-panel"></div>
+<aside class="panel" id="panel" role="dialog" aria-modal="true" aria-labelledby="panel-titulo">
+  <div class="panel-tirador" aria-hidden="true"></div>
+  <div class="panel-cabeza">
+    <h2 id="panel-titulo">Filtros</h2>
+    <button type="button" class="icono-btn" id="panel-cerrar" aria-label="Cerrar filtros">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-cerrar"></use></svg>
+    </button>
+  </div>
+
+  <div class="grupo">
+    <h3>Marca</h3>
+    <div class="chips" id="chips-marca"></div>
+  </div>
+
+  <div class="grupo">
+    <h3>Tipo de gorra</h3>
+    <div class="chips" id="chips-tipo"></div>
+  </div>
+
+  <div class="grupo">
+    <h3>Color</h3>
+    <div class="chips" id="chips-color"></div>
+  </div>
+
+  <div class="grupo" id="grupo-precio" hidden>
+    <h3>Precio</h3>
+    <p class="meta">Usa el orden por precio para recorrer el catálogo.</p>
+  </div>
+
+  <div class="grupo">
+    <h3>Disponibilidad</h3>
+    <div class="chips" id="chips-disponible"></div>
+  </div>
+
+  <div class="grupo" id="grupo-orden">
+    <h3>Ordenar por</h3>
+    <label class="solo-lectores" for="orden-panel">Ordenar por</label>
+    <select class="select-orden" id="orden-panel" style="width:100%">
+      <option value="recientes">Más recientes</option>
+      <option value="destacados">Destacados</option>
+      <option value="nombre">Nombre A–Z</option>
+      <option value="precio-asc" data-orden-precio>Precio: de menor a mayor</option>
+      <option value="precio-desc" data-orden-precio>Precio: de mayor a menor</option>
+    </select>
+  </div>
+
+  <div class="panel-pie">
+    <button type="button" class="btn btn--linea btn--bloque" id="panel-limpiar">Limpiar</button>
+    <button type="button" class="btn btn--primario btn--bloque" id="panel-ver">Ver resultados</button>
+  </div>
+</aside>

@@ -1,0 +1,187 @@
+<footer class="footer">
+  <div class="contenedor">
+    <div class="footer-rejilla">
+      <div class="footer-col footer-marca">
+        <a href="index.html" class="logo">
+          <img src="assets/logo/emblema-128.webp" alt="" width="40" height="40" loading="lazy" decoding="async">
+          <span class="logo-txt"><b>Exclusive</b><span>Caps Med</span></span>
+        </a>
+        <p>Gorras nacionales e importadas. Venta virtual desde Medellín, Colombia.</p>
+      </div>
+
+      <div class="footer-col">
+        <h3>Navegación</h3>
+        <ul>
+          <li><a href="index.html">Inicio</a></li>
+          <li><a href="catalogo.html">Catálogo</a></li>
+          <li><a href="index.html#marcas">Marcas</a></li>
+          <li><a href="index.html#como-comprar">Cómo comprar</a></li>
+          <li><a href="index.html#preguntas">Preguntas frecuentes</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h3>Catálogo</h3>
+        <ul id="pie-tipos"></ul>
+      </div>
+
+      <div class="footer-col">
+        <h3>Escríbenos</h3>
+        <ul>
+          <li>
+            <a data-wa href="#" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-whatsapp"></use></svg>
+              <span data-wa-numero>WhatsApp</span>
+            </a>
+          </li>
+          <li>
+            <a data-ig href="#" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-instagram"></use></svg>
+              <span data-ig-usuario>Instagram</span>
+            </a>
+          </li>
+          <li>
+            <span class="dato-pie">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ubicacion"></use></svg>
+              <span data-ciudad>Medellín, Colombia</span>
+            </span>
+          </li>
+        </ul>
+        <p class="meta" style="margin-top:8px">Los pedidos se coordinan por WhatsApp.</p>
+      </div>
+    </div>
+
+    <div class="footer-legal">
+      <span>© <span data-anio>2026</span> <span data-razon-social>EXCLUSIVE CAPS SAS</span>. Tienda virtual, sin punto de venta físico.</span>
+      <span>Las marcas y logotipos de los productos pertenecen a sus titulares.</span>
+    </div>
+  </div>
+</footer>
+
+<nav class="barra-inf" aria-label="Accesos rápidos">
+  <a href="index.html"{{BARRA_HOME}}>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-casa"></use></svg><span>Inicio</span>
+  </a>
+  <a href="catalogo.html"{{BARRA_CATALOGO}}>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-cuadricula"></use></svg><span>Catálogo</span>
+  </a>
+  <a href="catalogo.html#buscar">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-buscar"></use></svg><span>Buscar</span>
+  </a>
+  <button type="button" data-carrito-abrir>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-carrito"></use></svg><span>Carrito</span>
+    <span class="contador" data-contador aria-hidden="true">0</span>
+  </button>
+  <a class="wa" data-wa href="#" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-whatsapp"></use></svg><span>WhatsApp</span>
+  </a>
+</nav>
+
+<!-- ══ CARRITO ══ -->
+<div class="velo" id="velo-carrito"></div>
+<aside class="carrito" id="carrito" role="dialog" aria-modal="true" aria-labelledby="carrito-titulo">
+  <div class="carrito-cabeza">
+    <div>
+      <h2 id="carrito-titulo">Tu carrito</h2>
+      <p class="meta" id="carrito-conteo">Sin productos</p>
+    </div>
+    <button type="button" class="icono-btn" id="carrito-cerrar" aria-label="Cerrar carrito">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-cerrar"></use></svg>
+    </button>
+  </div>
+
+  <div class="carrito-cuerpo" id="carrito-cuerpo"></div>
+
+  <div class="carrito-pie" id="carrito-pie" hidden>
+    <p class="meta" id="carrito-almacen" hidden>Tu carrito se guardará solo mientras tengas esta pestaña abierta.</p>
+    <div class="total-fila total-fila--grande">
+      <span>Total</span><b class="cifra" id="carrito-total">Por confirmar</b>
+    </div>
+    <p class="meta" id="carrito-nota"></p>
+    <button type="button" class="btn btn--wa btn--bloque" id="carrito-finalizar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-whatsapp"></use></svg>
+      Finalizar pedido por WhatsApp
+    </button>
+    <button type="button" class="btn btn--fantasma btn--bloque" id="carrito-seguir">Seguir viendo gorras</button>
+  </div>
+</aside>
+
+<!-- ══ CHECKOUT ══ -->
+<div class="modal" id="checkout" role="dialog" aria-modal="true" aria-labelledby="checkout-titulo">
+  <div class="modal-caja">
+    <button type="button" class="icono-btn modal-cerrar" id="checkout-cerrar" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-cerrar"></use></svg>
+    </button>
+    <span class="eyebrow">Último paso</span>
+    <h2 id="checkout-titulo">Tus datos</h2>
+
+    <div class="resumen" id="checkout-resumen"></div>
+
+    <form id="checkout-form" novalidate>
+      <div class="campo">
+        <label for="f-nombre">Nombre completo <span class="req" aria-hidden="true">*</span></label>
+        <input id="f-nombre" name="nombre" type="text" autocomplete="name" required>
+        <p class="error" id="e-nombre"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-alerta"></use></svg><span></span></p>
+      </div>
+
+      <div class="campo">
+        <label for="f-telefono">Teléfono / WhatsApp <span class="req" aria-hidden="true">*</span></label>
+        <input id="f-telefono" name="telefono" type="tel" inputmode="tel" autocomplete="tel" required>
+        <p class="error" id="e-telefono"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-alerta"></use></svg><span></span></p>
+      </div>
+
+      <div class="campo" id="campo-ciudad">
+        <label for="f-ciudad">Ciudad <span class="req" aria-hidden="true">*</span></label>
+        <input id="f-ciudad" name="ciudad" type="text" autocomplete="address-level2" required>
+        <p class="error" id="e-ciudad"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-alerta"></use></svg><span></span></p>
+      </div>
+
+      <div class="campo" id="campo-direccion">
+        <label for="f-direccion">Dirección o punto de referencia</label>
+        <input id="f-direccion" name="direccion" type="text" autocomplete="street-address">
+        <p class="ayuda">Opcional. Si prefieres, la coordinamos por WhatsApp.</p>
+      </div>
+
+      <div class="campo" id="campo-nota">
+        <label for="f-nota">Nota para el pedido</label>
+        <textarea id="f-nota" name="nota" rows="2" placeholder="Algo que debamos tener en cuenta"></textarea>
+      </div>
+
+      <button type="submit" class="btn btn--wa btn--bloque" id="checkout-enviar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-whatsapp"></use></svg>
+        <span>Enviar pedido por WhatsApp</span>
+      </button>
+      <p class="ayuda" style="text-align:center;margin-top:10px">
+        Se abre WhatsApp con el mensaje ya escrito. Envíalo tal cual para que podamos revisarlo contigo.
+      </p>
+    </form>
+  </div>
+</div>
+
+<!-- ══ RESPALDO SI EL NAVEGADOR BLOQUEA WHATSAPP ══ -->
+<div class="modal" id="respaldo" role="dialog" aria-modal="true" aria-labelledby="respaldo-titulo">
+  <div class="modal-caja">
+    <button type="button" class="icono-btn modal-cerrar" id="respaldo-cerrar" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-cerrar"></use></svg>
+    </button>
+    <span class="eyebrow">Casi listo</span>
+    <h2 id="respaldo-titulo">No se abrió WhatsApp</h2>
+    <p class="parrafo" style="margin-bottom:20px">
+      Tu pedido sigue guardado. Ábrelo de nuevo o copia el mensaje y escríbenos al
+      <b data-wa-numero>número</b>.
+    </p>
+    <div style="display:grid;gap:8px">
+      <a class="btn btn--wa btn--bloque" id="respaldo-abrir" href="#" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-whatsapp"></use></svg>
+        Abrir WhatsApp otra vez
+      </a>
+      <button type="button" class="btn btn--linea btn--bloque" id="respaldo-copiar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-copiar"></use></svg>
+        Copiar el pedido
+      </button>
+      <a class="btn btn--fantasma btn--bloque" data-wa-tel href="#">Llamar al <span data-wa-numero></span></a>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>

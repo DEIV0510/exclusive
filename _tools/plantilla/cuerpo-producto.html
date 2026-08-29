@@ -1,0 +1,89 @@
+<main id="principal">
+  <div class="contenedor">
+    <nav class="migas" aria-label="Ruta">
+      <a href="index.html">Inicio</a>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
+      <a href="catalogo.html">Catálogo</a>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
+      <a href="catalogo.html?marca={{MARCA_URL}}">{{MARCA}}</a>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
+      <span aria-current="page">{{NOMBRE}}</span>
+    </nav>
+
+    <div class="ficha">
+      <div class="ficha-galeria">
+        <div class="galeria-visor" id="visor" data-indice="0" tabindex="0"
+             role="button" aria-label="Ampliar la foto del producto">
+          {{INSIGNIAS}}
+          <picture>
+            <source type="image/webp"
+                    srcset="assets/img/{{IMG0}}-400.webp 400w, assets/img/{{IMG0}}-760.webp 760w, assets/img/{{IMG0}}-1200.webp 1200w"
+                    sizes="(min-width:900px) 560px, 94vw">
+            <img src="assets/img/{{IMG0}}-760.jpg" alt="{{ALT0}}"
+                 width="760" height="760" fetchpriority="high" decoding="async">
+          </picture>
+          <span class="zoom-pista">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-lupa"></use></svg>Toca para ampliar
+          </span>
+        </div>
+        {{MINIATURAS}}
+      </div>
+
+      <div class="ficha-info">
+        <span class="ficha-marca">{{MARCA}}</span>
+        <h1>{{NOMBRE}}</h1>
+
+        <div class="ficha-precio">
+          {{PRECIO}}
+        </div>
+
+        <p class="ficha-desc">{{DESCRIPCION}}</p>
+
+        <div class="datos">
+          <div class="dato"><span>Tipo</span><b>{{TIPO}}</b></div>
+          <div class="dato"><span>Modelo</span><b>{{MODELO}}</b></div>
+          <div class="dato"><span>Talla</span><b>{{TALLA}}</b></div>
+          <div class="dato"><span>Estado</span><b class="{{ESTADO_CLASE}}">{{ESTADO}}</b></div>
+        </div>
+
+        {{COLORES}}
+
+        <ul class="lista-caract">
+          {{CARACTERISTICAS}}
+        </ul>
+
+        {{COMPRA}}
+      </div>
+    </div>
+  </div>
+
+  <section class="seccion" id="seccion-relacionados">
+    <div class="contenedor">
+      <div class="seccion-cabeza">
+        <div>
+          <span class="eyebrow">También te puede gustar</span>
+          <h2 class="t-sec">Otras gorras</h2>
+        </div>
+        <a class="btn btn--linea btn--sm" href="catalogo.html">Ver catálogo</a>
+      </div>
+      <div class="rejilla" id="relacionados"></div>
+    </div>
+  </section>
+</main>
+
+<!-- Barra de compra fija: solo aparece cuando los botones salen de la vista -->
+<div class="compra-sticky" id="compra-sticky">
+  <div class="cs-info">
+    <p class="cs-nombre">{{NOMBRE}}</p>
+    <p class="cs-precio">{{PRECIO_CORTO}}</p>
+  </div>
+  {{STICKY_BOTON}}
+</div>
+
+<!-- Zoom -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Foto ampliada">
+  <button type="button" class="icono-btn lightbox-cerrar" id="lightbox-cerrar" aria-label="Cerrar la foto ampliada">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-cerrar"></use></svg>
+  </button>
+  <img id="lightbox-img" src="" alt="">
+</div>
