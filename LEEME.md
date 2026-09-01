@@ -15,6 +15,7 @@ hosting y funciona.
 | Agregar una gorra nueva | `js/productos.js` | copio un bloque completo |
 | Cambiar el Instagram | `js/config.js` | `instagram.usuario` y `instagram.url` |
 | Cambiar las preguntas frecuentes | `js/config.js` | la lista `faq` |
+| Cambiar el carrusel de la portada | `js/config.js` | la lista `carrusel` |
 
 Después de tocar `js/productos.js` o el dominio, hay que correr **un solo comando**
 (ver [Regenerar la web](#regenerar-la-web)).
@@ -69,7 +70,40 @@ total del carrito avisará que hay artículos por confirmar. Nunca muestra `$0`.
 
 ---
 
-## 3. Agregar una gorra nueva
+## 3. El carrusel de la portada
+
+Arriba del todo rotan las diapositivas de campaña: foto grande, título, una
+frase corta y el botón **Comprar ahora**. Se configuran en `js/config.js`:
+
+```js
+carrusel: [
+  {
+    producto: 'new-era-9fifty-ny-yankees-roses',
+    titulo: 'NY Roses',
+    texto: 'El clásico NY atravesado por rosas rojas bordadas.',
+    cta: 'Comprar ahora',
+  },
+],
+```
+
+La foto y el enlace los toma del producto: tú solo escribes el título de
+campaña y la frase. Para quitar una diapositiva borra su bloque; para agregar
+otra copia uno y cambia el `producto` por el `slug` de la gorra.
+
+- `carruselSegundos: 6` es lo que dura cada una. Pon `0` para que no rote sola.
+- Si dejas la lista vacía, el carrusel se arma solo con las gorras destacadas.
+- Deja de rotar apenas el visitante desliza o toca una flecha, y no rota nunca
+  si el celular tiene activado "reducir movimiento".
+
+En celular la foto va a todo el ancho como en las tiendas grandes. En pantallas
+anchas pasa a dos columnas (texto | foto) a propósito: tus fotos miden entre
+266 y 600 px y estiradas a lo ancho de un monitor se verían borrosas.
+
+Después de cambiarlo: `node _tools/build-paginas.js`
+
+---
+
+## 4. Agregar una gorra nueva
 
 En `js/productos.js`, copia un bloque completo (desde `{` hasta `},`) y pégalo
 al principio de la lista para que salga primero. Luego cambia:
@@ -102,7 +136,7 @@ Las marcas y los tipos que todavía no tienen productos aparecen como
 
 ---
 
-## 4. Agregar las fotos de una gorra
+## 5. Agregar las fotos de una gorra
 
 1. Deja las fotos originales en una carpeta.
 2. Abre `_tools/build-images.js` y agrega una línea por foto en la lista
@@ -125,7 +159,7 @@ guardarlas en `assets/img/` con los nombres `mi-gorra-400.webp`,
 
 ---
 
-## 5. Regenerar la web
+## 6. Regenerar la web
 
 Cada vez que cambies **productos** o el **dominio**, corre:
 
@@ -146,7 +180,7 @@ deja el `sitemap` y el schema al día.
 
 ---
 
-## 6. Verla en tu computador
+## 7. Verla en tu computador
 
 ```bash
 node serve.js
@@ -159,7 +193,7 @@ todas las rutas son relativas.
 
 ---
 
-## 7. Publicarla en internet
+## 8. Publicarla en internet
 
 Sube **todo el contenido de la carpeta** (menos `_tools/`, que son las
 herramientas de trabajo) a la raíz del hosting.
@@ -178,7 +212,7 @@ apuntando a tu dominio real.
 
 ---
 
-## 8. Cómo llega un pedido
+## 9. Cómo llega un pedido
 
 1. El cliente agrega gorras al carrito (se le guardan aunque cierre la página).
 2. Pulsa **Finalizar pedido por WhatsApp**.
@@ -218,7 +252,7 @@ cliente realmente mandó el mensaje, y vaciarlo le haría perder el pedido.
 
 ---
 
-## 9. Qué NO dice la página (y por qué)
+## 10. Qué NO dice la página (y por qué)
 
 La tienda no promete envíos gratis, plazos de entrega, garantías, devoluciones ni
 métodos de pago, porque esas políticas todavía no están definidas. Tampoco hay
@@ -229,7 +263,7 @@ Es preferible no prometer nada a prometer algo que después no se pueda cumplir.
 
 ---
 
-## 10. Estructura de archivos
+## 11. Estructura de archivos
 
 ```
 exclusive-caps-med/
@@ -268,7 +302,7 @@ exclusive-caps-med/
 
 ---
 
-## 11. Pendientes
+## 12. Pendientes
 
 - [ ] Cargar los precios reales en `js/productos.js`.
 - [ ] Comprar el dominio y actualizarlo en `js/config.js` → `sitio.url`.

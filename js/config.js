@@ -76,16 +76,42 @@ window.ECM.CONFIG = {
     },
   },
 
-  /* ── 7. TEXTOS DE LA HOME ─────────────────────────────────────────────── */
-  textos: {
-    heroEyebrow: 'Medellín · Nacionales e importadas',
-    // El titular va en dos partes: la segunda se pinta en cursiva de acento
-    heroTitulo: 'Tu gorra',
-    heroTituloAcento: 'habla primero',
-    heroSub: 'Seleccionadas una por una. Pedidos por WhatsApp.',
-    heroCta: 'Ver las gorras',
-    heroCtaSec: 'Escribir',
-  },
+  /* ── 7. CARRUSEL DE LA PORTADA ────────────────────────────────────────────
+     Las diapositivas que rotan arriba del todo. Cada una toma la foto, el
+     nombre y el enlace de un producto de js/productos.js: solo escribes el
+     título de campaña y la frase.
+
+       producto  slug de la gorra (tiene que existir en productos.js)
+       titulo    título grande de la diapositiva
+       texto     una frase corta (máximo unas 15 palabras)
+       cta       texto del botón
+
+     Para quitar una diapositiva, borra su bloque. Si dejas la lista vacía,
+     el carrusel se arma solo con las gorras marcadas como destacadas.
+     Después de cambiar esto:  node _tools/build-paginas.js               */
+  carrusel: [
+    {
+      producto: 'new-era-9fifty-ny-yankees-roses',
+      titulo: 'NY Roses',
+      texto: 'El clásico NY atravesado por rosas rojas bordadas.',
+      cta: 'Comprar ahora',
+    },
+    {
+      producto: 'new-era-9fifty-shohei-ohtani-17',
+      titulo: 'Ohtani 17',
+      texto: 'Corona crema, visera azul royal y bordado a varios hilos.',
+      cta: 'Comprar ahora',
+    },
+    {
+      producto: 'new-era-9fifty-white-sox-roses',
+      titulo: 'Sox Roses',
+      texto: 'Negro y blanco con un ramo de rosas al costado.',
+      cta: 'Comprar ahora',
+    },
+  ],
+
+  /* Segundos que dura cada diapositiva. Pon 0 para que no rote sola. */
+  carruselSegundos: 6,
 
   /* ── 8. BLOQUES DE CONFIANZA ──────────────────────────────────────────────
      Solo afirmaciones que puedes sostener. Si cambias tus condiciones

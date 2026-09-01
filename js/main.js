@@ -129,7 +129,10 @@
 
     var pagina = document.body.getAttribute('data-pagina');
 
-    if (pagina === 'home') pintarHome();
+    if (pagina === 'home') {
+      pintarHome();
+      if (ECM.Carrusel) ECM.Carrusel.iniciar();
+    }
     if (pagina === 'catalogo') ECM.Catalogo.iniciar();
     if (pagina === 'producto') ECM.Producto.iniciar();
 

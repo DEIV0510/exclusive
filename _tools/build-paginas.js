@@ -299,6 +299,63 @@ function scripts(extra) {
     .map((s) => `<script src="${s}" defer></script>`).join('\n');
 }
 
+/* ── Diapositivas del carrusel ─────────────────────────────────────────────
+   Salen de CONFIG.carrusel; cada una toma la foto y el enlace de su producto.
+   Si la lista está vacía o apunta a productos que ya no existen, se rellena
+   sola con las gorras destacadas: la portada nunca se queda sin carrusel.  */
+function slidesDeConfig() {
+  const porSlug = (s) => PRODUCTOS.filter((p) => p.slug === s)[0];
+
+  let slides = (CONFIG.carrusel || [])
+    .map((s) => ({ ...s, p: porSlug(s.producto) }))
+    .filter((s) => {
+      if (!s.p) console.log(`  ! El carrusel apunta a "${s.producto}", que no está en productos.js`);
+      return s.p;
+    });
+
+  if (!slides.length) {
+    slides = PRODUCTOS.filter((p) => p.destacado).slice(0, 4).map((p) => ({ p }));
+  }
+  if (!slides.length) slides = PRODUCTOS.slice(0, 4).map((p) => ({ p }));
+  return slides;
+}
+
+function diapositivas() {
+  const slides = slidesDeConfig();
+
+  return slides.map((s, i) => {
+    const p = s.p;
+    const titulo = s.titulo || p.nombre;
+    const texto = s.texto || p.descripcion;
+    const cta = s.cta || 'Comprar ahora';
+    const base = p.imagenes[0];
+    // Solo la primera se carga de inmediato; las demás esperan a que el
+    // usuario deslice, para no pelear con la imagen principal.
+    const carga = i === 0
+      ? ' fetchpriority="high" decoding="async"'
+      : ' loading="lazy" decoding="async"';
+
+    return `<article class="dia" role="group" aria-roledescription="diapositiva"
+               aria-label="${i + 1} de ${slides.length}: ${esc(titulo)}">
+        <div class="dia-foto">
+          <picture>
+            <source type="image/webp"
+                    srcset="assets/img/${base}-400.webp 400w, assets/img/${base}-760.webp 760w, assets/img/${base}-1200.webp 1200w"
+                    sizes="(min-width: 900px) 560px, 100vw">
+            <img src="assets/img/${base}-760.jpg" alt="${esc(altDe(p, 0))}"
+                 width="760" height="760"${carga}>
+          </picture>
+        </div>
+        <div class="dia-txt">
+          <span class="eyebrow">${esc(p.marca)}${p.modelo ? ' ' + esc(p.modelo) : ''}</span>
+          <h2 class="dia-titulo">${esc(titulo)}</h2>
+          <p class="dia-frase">${esc(texto)}</p>
+          <a class="btn btn--primario dia-cta" href="${urlProducto(p)}">${esc(cta)}</a>
+        </div>
+      </article>`;
+  }).join('\n      ');
+}
+
 /* ── Página: home ──────────────────────────────────────────────────────── */
 function construirHome() {
   const faq = CONFIG.faq.map((f) =>
@@ -307,24 +364,18 @@ function construirHome() {
           <p>${esc(f.r)}</p>
         </details>`).join('\n        ');
 
-  // Las dos partes del titular vienen separadas desde config.js: la segunda
-  // se pinta con la cursiva de acento. Nada de partir la frase adivinando.
-  const acento = (CONFIG.textos.heroTituloAcento || '').trim();
-  const heroTitulo = esc(CONFIG.textos.heroTitulo.trim()) +
-    (acento ? ' <span class="script">' + esc(acento) + '</span>' : '');
-
   const cuerpo = leer('cuerpo-home.html')
     .replace('{{FAQ}}', faq)
-    .replace('{{HERO_EYEBROW}}', esc(CONFIG.textos.heroEyebrow))
-    .replace('{{HERO_TITULO}}', heroTitulo)
-    .replace('{{HERO_SUB}}', esc(CONFIG.textos.heroSub))
-    .replace('{{HERO_CTA}}', esc(CONFIG.textos.heroCta))
-    .replace('{{HERO_CTA_SEC}}', esc(CONFIG.textos.heroCtaSec));
+    .replace('{{H1}}', esc(`${CONFIG.marca} — gorras nacionales e importadas en ${CONFIG.ciudad}`))
+    .replace('{{DIAPOSITIVAS}}', diapositivas());
 
+  // Se precarga la foto de la PRIMERA diapositiva: es el elemento más grande
+  // de la pantalla inicial y marca el tiempo de carga percibido.
+  const primeraFoto = slidesDeConfig()[0].p.imagenes[0];
   const precarga = `<link rel="preload" as="image" fetchpriority="high"
-      href="assets/img/ohtani-1-760.webp"
-      imagesrcset="assets/img/ohtani-1-400.webp 400w, assets/img/ohtani-1-760.webp 760w"
-      imagesizes="(min-width: 900px) 54vw, 100vw" type="image/webp">`;
+      href="assets/img/${primeraFoto}-760.webp"
+      imagesrcset="assets/img/${primeraFoto}-400.webp 400w, assets/img/${primeraFoto}-760.webp 760w, assets/img/${primeraFoto}-1200.webp 1200w"
+      imagesizes="(min-width: 900px) 560px, 100vw" type="image/webp">`;
 
   const head = cabeza({
     titulo: `Gorras New Era en ${CONFIG.ciudad} | ${CONFIG.marca}`,
@@ -334,7 +385,7 @@ function construirHome() {
     precargarImagen: precarga,
   });
 
-  return documento({ head, pagina: 'home', cuerpo, scripts: scripts() });
+  return documento({ head, pagina: 'home', cuerpo, scripts: scripts(['js/ui-carrusel.js']) });
 }
 
 /* ── Página: catálogo ──────────────────────────────────────────────────── */

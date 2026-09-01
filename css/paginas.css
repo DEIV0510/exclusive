@@ -3,58 +3,179 @@
    Hero · secciones de la home · barra de filtros · ficha de producto · footer
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── HERO ──────────────────────────────────────────────────────────────────
-   No ocupa la pantalla completa a propósito: con 296 px en móvil la foto ya
-   comunica el producto y las primeras tarjetas asoman por el borde inferior,
-   que es lo que dispara el scroll.                                        */
-.hero {
+/* ── CARRUSEL DE CAMPAÑA ───────────────────────────────────────────────────
+   En móvil ocupa todo el ancho: foto a sangre, el texto encima abajo y el
+   botón de compra, como una campaña de tienda.
+   En escritorio pasa a dos columnas (texto | foto) a propósito: las fotos de
+   origen miden entre 266 y 600 px y estiradas a lo ancho de una pantalla
+   grande se verían borrosas; en media pantalla salen a tamaño casi natural. */
+.carrusel {
   position: relative;
-  min-height: 296px;
-  display: flex;
-  align-items: flex-end;
-  overflow: hidden;
-  isolation: isolate;
   background: var(--navy-950);
 }
 
-.hero-foto {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
+.carrusel-pista {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior-x: contain;
 }
-.hero-foto img {
+.carrusel-pista::-webkit-scrollbar { display: none; }
+
+.dia {
+  position: relative;
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  min-width: 0;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  min-height: 430px;
+}
+
+.dia-foto { position: absolute; inset: 0; z-index: -2; }
+.dia-foto picture { display: block; width: 100%; height: 100%; }
+.dia-foto img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* En móvil la gorra se corre a la derecha para no pelear con el titular */
-  object-position: 76% 40%;
+  object-position: 50% 42%;
 }
 
-.hero::before {
+/* Degradado para que el texto se lea sobre cualquier foto. Sube bastante
+   porque las gorras traen bordados con letras que compiten con el titular. */
+.dia::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: -1;
-  background:
-    linear-gradient(to top, var(--navy-950) 2%, rgba(1, 4, 15, .74) 38%, rgba(1, 4, 15, .1) 82%),
-    linear-gradient(to right, rgba(1, 4, 15, .96) 0%, rgba(1, 4, 15, .82) 34%, rgba(1, 4, 15, .06) 84%);
+  background: linear-gradient(
+    to top,
+    var(--navy-950) 0%,
+    rgba(1, 4, 15, .95) 32%,
+    rgba(1, 4, 15, .76) 54%,
+    rgba(1, 4, 15, .32) 76%,
+    rgba(1, 4, 15, 0) 94%
+  );
 }
 
-/* El ancho se limita en los hijos, NO en .hero-txt: ese div también es
-   .contenedor y ponerle max-width lo sacaba de la retícula de 1200 px,
-   dejando el texto descentrado respecto al resto de la página. */
-.hero-txt { padding-block: var(--e6) var(--e7); }
-.hero-txt > * { max-width: 620px; }
-.hero-txt .eyebrow { margin-bottom: var(--e2); color: var(--hielo); }
-.hero h1 { margin-bottom: var(--e3); }
-.hero h1 .script {
-  display: block;
-  font-size: 1.06em;
-  color: var(--hielo);
-  margin-top: -.06em;
+.dia-txt {
+  width: 100%;
+  max-width: var(--ancho);
+  margin-inline: auto;
+  /* El hueco de abajo deja sitio a los puntos y las flechas (44 px + margen):
+     sin él el botón de compra les quedaba encima. */
+  padding: var(--e5) var(--e4) 72px;
+  text-align: center;
 }
-.hero-sub { color: var(--tx-2); font-size: 15px; margin-bottom: var(--e5); max-width: 40ch; }
-.hero-botones { display: flex; gap: var(--e2); flex-wrap: wrap; }
+.dia-txt .eyebrow { color: var(--hielo); margin-bottom: 6px; }
+
+.dia-titulo {
+  font-size: clamp(30px, 8.4vw, 44px);
+  text-transform: uppercase;
+  margin-bottom: var(--e2);
+}
+.dia-frase {
+  color: var(--tx-2);
+  font-size: 14.5px;
+  margin: 0 auto var(--e4);
+  max-width: 34ch;
+}
+.dia-cta { min-width: 200px; }
+
+/* ── Mando: flechas + puntos ───────────────────────────────────────────── */
+.carrusel-mando {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--e3);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e3);
+  pointer-events: none;
+}
+.carrusel-mando > * { pointer-events: auto; }
+
+.carrusel-puntos { display: flex; align-items: center; gap: 6px; }
+.carrusel-punto {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+/* El área tocable es de 44 px pero el punto visible es pequeño */
+.carrusel-punto::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(244, 246, 250, .38);
+  transition: background var(--t-rapido), width var(--t-rapido);
+}
+.carrusel-punto[aria-selected='true']::before {
+  background: var(--tx);
+  width: 22px;
+}
+
+/* Las flechas solo tienen sentido donde hay cursor: en táctil se desliza */
+.carrusel-flecha { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .carrusel-flecha {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    color: var(--tx);
+    background: rgba(1, 4, 15, .5);
+    border: 1px solid var(--linea-2);
+    transition: background var(--t-rapido), border-color var(--t-rapido);
+  }
+  .carrusel-flecha:hover { background: var(--azul); border-color: var(--azul); }
+  .carrusel-flecha svg { width: 18px; height: 18px; }
+  .carrusel-flecha[data-ir='-1'] svg { transform: rotate(180deg); }
+}
+
+@media (min-width: 900px) {
+  .dia {
+    min-height: 460px;
+    align-items: center;
+  }
+  /* La foto se queda en la mitad derecha y se funde hacia el texto */
+  .dia-foto {
+    left: 47%;
+    mask-image: linear-gradient(to right, transparent 0%, #000 24%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 24%);
+  }
+  .dia-foto img { object-position: 50% 44%; }
+  .dia::before {
+    background:
+      linear-gradient(to top, var(--navy-950) 0%, rgba(1, 4, 15, .45) 26%, transparent 62%),
+      linear-gradient(to right, rgba(1, 4, 15, .94) 0%, rgba(1, 4, 15, .6) 40%, transparent 70%);
+  }
+  .dia-txt {
+    text-align: left;
+    padding-block: var(--e8) 92px;
+  }
+  .dia-txt > * { max-width: 560px; }
+  .dia-titulo { font-size: clamp(38px, 4.4vw, 58px); }
+  .dia-frase { font-size: 16.5px; margin-inline: 0; }
+
+  .carrusel-mando {
+    justify-content: flex-start;
+    max-width: var(--ancho);
+    margin-inline: auto;
+    padding-inline: var(--e4);
+    bottom: var(--e6);
+  }
+}
 
 /* Silueta de Medellín: montañas + torres + metrocable, como en el emblema */
 .skyline {
@@ -64,34 +185,12 @@
   bottom: 0;
   width: 100%;
   height: 128px;
-  z-index: -1;
   color: var(--brillo);
   /* Muy tenue a propósito: es una textura de fondo, no un gráfico */
-  opacity: .16;
+  opacity: .18;
   pointer-events: none;
   mask-image: linear-gradient(to top, #000 10%, transparent 85%);
   -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 85%);
-}
-
-@media (min-width: 900px) {
-  .hero { min-height: 470px; }
-  .hero-txt { padding-block: var(--e9) var(--e8); }
-  .hero-sub { font-size: 17px; }
-  .skyline { height: 190px; opacity: .22; }
-
-  /* En pantallas anchas la foto ocupa solo la mitad derecha y se funde hacia
-     la izquierda: a sangre completa habría que ampliarla y la gorra se perdía. */
-  .hero-foto {
-    left: 46%;
-    mask-image: linear-gradient(to right, transparent 0%, #000 26%);
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 26%);
-  }
-  .hero-foto img { object-position: 52% 44%; }
-  .hero::before {
-    background:
-      linear-gradient(to top, var(--navy-950) 0%, rgba(1, 4, 15, .5) 30%, transparent 70%),
-      linear-gradient(to right, rgba(1, 4, 15, .92) 0%, rgba(1, 4, 15, .55) 42%, transparent 72%);
-  }
 }
 
 /* ── Tira de confianza ─────────────────────────────────────────────────── */

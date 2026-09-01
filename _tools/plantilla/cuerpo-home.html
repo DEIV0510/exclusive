@@ -1,49 +1,22 @@
 <main id="principal" data-pagina-cuerpo>
 
-  <!-- ══ HERO ══ -->
-  <section class="hero">
-    <div class="hero-foto">
-      <picture>
-        <source type="image/webp"
-                srcset="assets/img/ohtani-1-400.webp 400w, assets/img/ohtani-1-760.webp 760w"
-                sizes="(min-width: 900px) 54vw, 100vw">
-        <img src="assets/img/ohtani-1-760.jpg"
-             alt="Gorra New Era 9FIFTY Shohei Ohtani, corona crema con visera azul royal"
-             width="1200" height="940" fetchpriority="high" decoding="async">
-      </picture>
+  <h1 class="solo-lectores">{{H1}}</h1>
+
+  <!-- ══ CARRUSEL DE CAMPAÑA ══ -->
+  <section class="carrusel" id="carrusel"
+           aria-roledescription="carrusel" aria-label="Gorras destacadas">
+    <div class="carrusel-pista" id="carrusel-pista">
+      {{DIAPOSITIVAS}}
     </div>
 
-    <svg class="skyline" viewBox="0 0 1440 190" preserveAspectRatio="none" aria-hidden="true"
-         fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
-      <!-- montañas -->
-      <path d="M0 96 L128 34 L196 72 L268 22 L342 78 L410 48 L486 104" opacity=".7"/>
-      <path d="M486 100 L556 52 L618 84 L692 26 L762 82 L836 54 L920 106 L1004 66 L1090 110 L1180 72 L1280 112 L1370 78 L1440 104" opacity=".7"/>
-      <!-- torres -->
-      <path d="M120 190v-72h30v72M166 190v-52h24v52M206 190v-88h28v88M252 190v-44h26v44"/>
-      <path d="M320 190v-96h32v96M368 190v-58h26v58M410 190v-78h28v78"/>
-      <path d="M600 190v-104h36v104M654 190v-62h28v62M700 190v-88h30v88M748 190v-46h26v46"/>
-      <path d="M900 190v-84h32v84M950 190v-56h26v56M994 190v-100h34v100M1046 190v-64h28v64"/>
-      <path d="M1150 190v-76h30v76M1198 190v-52h26v52M1240 190v-92h32v92"/>
-      <!-- cable del metrocable con dos cabinas -->
-      <path d="M840 30h600" opacity=".55"/>
-      <path d="M1010 30v18M998 48h24v20h-24z" opacity=".75"/>
-      <path d="M1230 30v14M1218 44h24v20h-24z" opacity=".6"/>
-    </svg>
-
-    <div class="contenedor hero-txt">
-      <span class="eyebrow">{{HERO_EYEBROW}}</span>
-      <h1 class="t-hero">{{HERO_TITULO}}</h1>
-      <p class="hero-sub">{{HERO_SUB}}</p>
-      <div class="hero-botones">
-        <a class="btn btn--primario" href="#disponibles">
-          {{HERO_CTA}}
-          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
-        </a>
-        <a class="btn btn--linea" data-wa href="#" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-whatsapp"></use></svg>
-          {{HERO_CTA_SEC}}
-        </a>
-      </div>
+    <div class="carrusel-mando">
+      <button type="button" class="carrusel-flecha" data-ir="-1" aria-label="Diapositiva anterior">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
+      </button>
+      <div class="carrusel-puntos" id="carrusel-puntos" role="tablist" aria-label="Elegir diapositiva"></div>
+      <button type="button" class="carrusel-flecha" data-ir="1" aria-label="Diapositiva siguiente">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
+      </button>
     </div>
   </section>
 
@@ -94,6 +67,22 @@
   <section class="seccion seccion--ceñida">
     <div class="contenedor">
       <div class="identidad trama revelar">
+        <svg class="skyline" viewBox="0 0 1440 190" preserveAspectRatio="none" aria-hidden="true"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+          <!-- montañas -->
+          <path d="M0 96 L128 34 L196 72 L268 22 L342 78 L410 48 L486 104" opacity=".7"/>
+          <path d="M486 100 L556 52 L618 84 L692 26 L762 82 L836 54 L920 106 L1004 66 L1090 110 L1180 72 L1280 112 L1370 78 L1440 104" opacity=".7"/>
+          <!-- torres -->
+          <path d="M120 190v-72h30v72M166 190v-52h24v52M206 190v-88h28v88M252 190v-44h26v44"/>
+          <path d="M320 190v-96h32v96M368 190v-58h26v58M410 190v-78h28v78"/>
+          <path d="M600 190v-104h36v104M654 190v-62h28v62M700 190v-88h30v88M748 190v-46h26v46"/>
+          <path d="M900 190v-84h32v84M950 190v-56h26v56M994 190v-100h34v100M1046 190v-64h28v64"/>
+          <path d="M1150 190v-76h30v76M1198 190v-52h26v52M1240 190v-92h32v92"/>
+          <!-- cable del metrocable con dos cabinas -->
+          <path d="M840 30h600" opacity=".55"/>
+          <path d="M1010 30v18M998 48h24v20h-24z" opacity=".75"/>
+          <path d="M1230 30v14M1218 44h24v20h-24z" opacity=".6"/>
+        </svg>
         <img class="identidad-emblema" src="assets/logo/emblema-256.webp"
              alt="Emblema de EXCLUSIVE CAPS MED" width="150" height="150" loading="lazy" decoding="async">
         <div>
