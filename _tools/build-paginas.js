@@ -345,7 +345,15 @@ function diapositivas() {
       ? `${CONFIG.marca} — ${titulo}`
       : altDe(p, 0);
     const base = fotoPrincipalDeSlide(s);
-    const estilo = s.posicion ? ` style="object-position:${s.posicion}"` : '';
+    // "difuminado" son los píxeles de desenfoque de la foto de fondo. Va como
+    // variable CSS para que el CSS decida cómo aplicarlo en cada tamaño.
+    // Se topa en 12 px: un cero de más al escribirlo dejaría el hero ilegible.
+    const dif = Math.min(12, Math.max(0, Number(s.difuminado) || 0));
+    const partes = [];
+    // config.js lo escribe una persona: un valor con comillas rompería el atributo
+    if (s.posicion) partes.push(`object-position:${esc(String(s.posicion))}`);
+    if (dif) partes.push(`--dif:${dif}px`);
+    const estilo = partes.length ? ` style="${partes.join(';')}"` : '';
 
     // Solo la primera se carga de inmediato; las demás esperan a que el
     // usuario deslice, para no pelear con la imagen principal.
@@ -355,7 +363,7 @@ function diapositivas() {
 
     return `<article class="dia" role="group" aria-roledescription="diapositiva"
                aria-label="${i + 1} de ${slides.length}: ${esc(titulo)}">
-        <div class="dia-foto">
+        <div class="dia-foto${dif ? ' es-difuminada' : ''}">
           <picture>
             <source type="image/webp"
                     srcset="assets/img/${base}-400.webp 400w, assets/img/${base}-760.webp 760w, assets/img/${base}-1200.webp 1200w"

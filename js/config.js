@@ -103,6 +103,8 @@ window.ECM.CONFIG = {
       // "posicion" mueve el encuadre de la foto (izquierda/derecha, arriba/abajo).
       imagen: 'portada',
       posicion: '50% 3%',
+      // Desenfoque de la foto de fondo, en píxeles. 0 = nítida.
+      difuminado: 1,
       eyebrow: 'Medellín · Nacionales e importadas',
       titulo: 'Tu gorra habla primero',
       cta: 'Ver el catálogo',

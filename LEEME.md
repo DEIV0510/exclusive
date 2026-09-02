@@ -96,14 +96,22 @@ otra copia uno y cambia el `producto` por el `slug` de la gorra.
 - Deja de rotar apenas el visitante desliza o toca una flecha, y no rota nunca
   si el celular tiene activado "reducir movimiento".
 
-En celular la foto va arriba, en un cuadro a todo el ancho, y el texto debajo
-sobre el fondo claro. Se hizo así porque encima de una gorra oscura el titular
-no se alcanzaba a leer. En pantallas anchas pasa a dos columnas (texto | foto).
+En celular la foto va a todo el ancho y el texto **encima**, con la foto atenuada
+detrás. En pantallas anchas pasa a dos columnas (texto | foto).
 
 La primera diapositiva es la **portada**: en vez de `producto` lleva `imagen`
 (el nombre del archivo en `assets/img`, sin el `-760.webp`) y no lleva `texto`.
-Con `posicion` mueves el encuadre: `'50% 3%'` es «centrada a lo ancho, casi
-pegada arriba». Súbele el segundo número para bajar el encuadre.
+Tiene dos ajustes propios:
+
+- `posicion: '50% 3%'` mueve el encuadre. Es «centrada a lo ancho, casi pegada
+  arriba»; súbele el segundo número para bajar el encuadre.
+- `difuminado: 1` son los píxeles de desenfoque de la foto de fondo. `0` la deja
+  nítida; `3` la deja bastante borrosa. Las diapositivas de producto no lo llevan
+  a propósito: la gorra tiene que verse nítida porque el botón dice «Comprar ahora».
+
+> **Antes de tocar el velo de la foto** (`.dia::before` en `css/paginas.css`): está
+> calculado para que el titular se lea encima de cualquier foto, incluso sobre una
+> gorra negra. Si lo aclaras, mide el contraste otra vez.
 
 Después de cambiarlo: `node _tools/build-paginas.js`
 
