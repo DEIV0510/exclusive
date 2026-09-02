@@ -438,6 +438,52 @@
     if (soltarFocoRespaldo) { soltarFocoRespaldo(); soltarFocoRespaldo = null; }
   }
 
+  /* ═══ Rieles que se desplazan de lado ═════════════════════════════════════
+     Cada .riel-caja tiene un riel y dos flechas. Las flechas solo se muestran
+     hacia el lado al que de verdad queda contenido por ver: si todo cabe en
+     pantalla, no aparece ninguna.                                          */
+  function iniciarRieles() {
+    u.$$('.riel-caja').forEach(function (caja) {
+      var riel = u.$('[data-riel]', caja);
+      if (!riel) return;
+      var izq = u.$('[data-riel-ir="-1"]', caja);
+      var der = u.$('[data-riel-ir="1"]', caja);
+
+      function actualizar() {
+        var max = riel.scrollWidth - riel.clientWidth;
+        // 4 px de holgura: los navegadores redondean el scroll a subpíxeles
+        var hayDeSobra = max > 4;
+        if (izq) izq.hidden = !hayDeSobra || riel.scrollLeft <= 4;
+        if (der) der.hidden = !hayDeSobra || riel.scrollLeft >= max - 4;
+      }
+
+      function mover(dir) {
+        // Se avanza el 80% de lo visible: siempre queda algo a la vista para
+        // no perder el hilo de dónde estabas.
+        riel.scrollBy({ left: dir * riel.clientWidth * 0.8, behavior: 'smooth' });
+      }
+
+      u.$$('[data-riel-ir]', caja).forEach(function (b) {
+        b.addEventListener('click', function () {
+          mover(Number(b.getAttribute('data-riel-ir')));
+          setTimeout(actualizar, 450);
+        });
+      });
+
+      riel.addEventListener('scroll', actualizar, { passive: true });
+      window.addEventListener('resize', u.debounce(actualizar, 150));
+
+      // El contenido de algunos rieles lo pinta el JS después: se revisa de
+      // nuevo cuando cambie y cuando terminen de cargar las imágenes.
+      if ('ResizeObserver' in window) new ResizeObserver(actualizar).observe(riel);
+      if ('MutationObserver' in window) {
+        new MutationObserver(actualizar).observe(riel, { childList: true });
+      }
+      window.addEventListener('load', actualizar);
+      actualizar();
+    });
+  }
+
   /* ═══ Eventos ═════════════════════════════════════════════════════════ */
   function conectar() {
     // Delegación: agregar al carrito desde cualquier parte de la página
@@ -538,9 +584,11 @@
       iniciarHeader();
       conectar();
       pintarCarrito();
+      iniciarRieles();
       u.iniciarRevelado();
       u.activarFotos();
     },
+    iniciarRieles: iniciarRieles,
     quitarCarga: quitarCarga,
     abrirCarrito: abrirCarrito,
     cerrarCarrito: cerrarCarrito,

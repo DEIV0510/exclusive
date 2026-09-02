@@ -22,7 +22,17 @@
 
   <!-- ══ ACCESOS RÁPIDOS ══ -->
   <section class="contenedor" style="padding-block:16px" aria-label="Accesos rápidos al catálogo">
-    <div class="riel" id="riel-chips"></div>
+    <div class="riel-caja">
+      <button type="button" class="riel-flecha riel-flecha--izq" data-riel-ir="-1"
+              aria-label="Ver accesos anteriores" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
+      </button>
+      <div class="riel" id="riel-chips" data-riel></div>
+      <button type="button" class="riel-flecha riel-flecha--der" data-riel-ir="1"
+              aria-label="Ver más accesos" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
+      </button>
+    </div>
   </section>
 
   <!-- ══ DISPONIBLES ══ -->
@@ -108,8 +118,18 @@
           <p class="meta">Piezas de edición. Pregúntanos por la que te guste.</p>
         </div>
       </div>
-      <div class="riel colecciones revelar">
-        {{COLECCIONES}}
+      <div class="riel-caja revelar">
+        <button type="button" class="riel-flecha riel-flecha--izq" data-riel-ir="-1"
+                aria-label="Ver colecciones anteriores" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
+        </button>
+        <div class="riel colecciones" data-riel>
+          {{COLECCIONES}}
+        </div>
+        <button type="button" class="riel-flecha riel-flecha--der" data-riel-ir="1"
+                aria-label="Ver más colecciones" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
+        </button>
       </div>
     </div>
   </section>

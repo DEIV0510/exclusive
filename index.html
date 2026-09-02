@@ -397,7 +397,17 @@
 
   <!-- ══ ACCESOS RÁPIDOS ══ -->
   <section class="contenedor" style="padding-block:16px" aria-label="Accesos rápidos al catálogo">
-    <div class="riel" id="riel-chips"></div>
+    <div class="riel-caja">
+      <button type="button" class="riel-flecha riel-flecha--izq" data-riel-ir="-1"
+              aria-label="Ver accesos anteriores" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
+      </button>
+      <div class="riel" id="riel-chips" data-riel></div>
+      <button type="button" class="riel-flecha riel-flecha--der" data-riel-ir="1"
+              aria-label="Ver más accesos" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
+      </button>
+    </div>
   </section>
 
   <!-- ══ DISPONIBLES ══ -->
@@ -483,8 +493,13 @@
           <p class="meta">Piezas de edición. Pregúntanos por la que te guste.</p>
         </div>
       </div>
-      <div class="riel colecciones revelar">
-        <a class="coleccion" href="https://wa.me/573222544571?text=Hola%20EXCLUSIVE%20CAPS%20MED%2C%20quiero%20informaci%C3%B3n%20sobre%20la%20colecci%C3%B3n%20Haru." target="_blank" rel="noopener">
+      <div class="riel-caja revelar">
+        <button type="button" class="riel-flecha riel-flecha--izq" data-riel-ir="-1"
+                aria-label="Ver colecciones anteriores" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
+        </button>
+        <div class="riel colecciones" data-riel>
+          <a class="coleccion" href="https://wa.me/573222544571?text=Hola%20EXCLUSIVE%20CAPS%20MED%2C%20quiero%20informaci%C3%B3n%20sobre%20la%20colecci%C3%B3n%20Haru." target="_blank" rel="noopener">
           <picture>
             <source type="image/webp" srcset="assets/img/col-haru-400.webp 400w, assets/img/col-haru-760.webp 760w"
                     sizes="(min-width: 900px) 300px, 62vw">
@@ -604,6 +619,11 @@
             <small>Bordado en plata sobre negro</small>
           </span>
         </a>
+        </div>
+        <button type="button" class="riel-flecha riel-flecha--der" data-riel-ir="1"
+                aria-label="Ver más colecciones" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
+        </button>
       </div>
     </div>
   </section>

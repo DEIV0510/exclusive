@@ -447,6 +447,10 @@
   scrollbar-width: none;
   margin-inline: calc(var(--e4) * -1);
   padding-inline: var(--e4);
+  /* Sin esto, el ajuste por scroll-snap alinea el primer elemento con el
+     borde del contenedor y deja el riel arrancado en 16 px, lo que encendía
+     la flecha de "volver" nada más cargar. */
+  scroll-padding-inline: var(--e4);
   padding-bottom: 2px;
 }
 .riel::-webkit-scrollbar { display: none; }
@@ -781,4 +785,42 @@
   .rejilla { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .logo img { width: 40px; height: 40px; }
   .logo-txt b { font-size: 20px; }
+}
+
+/* ── Riel con flechas ──────────────────────────────────────────────────────
+   Envuelve cualquier .riel para poder moverlo con botones. Las flechas solo
+   aparecen donde hay cursor (en táctil se desliza con el dedo) y solo hacia
+   el lado al que de verdad queda contenido por ver.                       */
+.riel-caja { position: relative; }
+
+.riel-flecha {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: none;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--tx);
+  background: rgba(6, 13, 34, .92);
+  border: 1px solid var(--linea-2);
+  box-shadow: var(--sombra);
+  transition: background var(--t-rapido), border-color var(--t-rapido), opacity var(--t-rapido);
+}
+.riel-flecha:hover { background: var(--azul); border-color: var(--azul); }
+.riel-flecha svg { width: 18px; height: 18px; }
+.riel-flecha--izq { left: -6px; }
+.riel-flecha--izq svg { transform: rotate(180deg); }
+.riel-flecha--der { right: -6px; }
+
+/* [hidden] gana siempre: si no hay a dónde desplazarse, no se muestra */
+@media (hover: hover) and (pointer: fine) {
+  .riel-flecha:not([hidden]) { display: grid; }
+}
+
+@media (min-width: 1280px) {
+  .riel-flecha--izq { left: -20px; }
+  .riel-flecha--der { right: -20px; }
 }

@@ -38,15 +38,15 @@ const ANCHOS = [160, 400, 760, 1200];
 const FOTOS = [
   /* ── New Era · Shohei Ohtani 17 ─────────────────────────────────────────
      gorra6 = gorra3, gorra7 = gorra2, gorra8 = gorra (repetidas)          */
-  { src: 'gorra3.png', out: 'ohtani-1', crop: { left: 95, top: 55, width: 600, height: 470 } },
-  { src: 'gorra.png',  out: 'ohtani-2', crop: { left: 0, top: 0, width: 562, height: 560 }, ocupacion: 0.94 },
-  { src: 'gorra2.png', out: 'ohtani-3', crop: { left: 40, top: 40, width: 490, height: 620 }, ocupacion: 0.94 },
+  { src: 'gorra3.png', out: 'ohtani-1', crop: { left: 125, top: 75, width: 545, height: 435 } },
+  { src: 'gorra.png',  out: 'ohtani-2', crop: { left: 8, top: 38, width: 548, height: 370 } },
+  { src: 'gorra2.png', out: 'ohtani-3', crop: { left: 100, top: 92, width: 385, height: 500 } },
 
   /* ── New Era · Roses (gorra4/5/9 traen las dos gorras juntas) ────────── */
-  { src: 'gorra5.png', out: 'ny-roses-1',  crop: { left: 8, top: 218, width: 284, height: 345 } },
-  { src: 'gorra4.png', out: 'ny-roses-2',  crop: { left: 0, top: 228, width: 268, height: 392 } },
-  { src: 'gorra5.png', out: 'sox-roses-1', crop: { left: 302, top: 222, width: 266, height: 305 } },
-  { src: 'gorra4.png', out: 'sox-roses-2', crop: { left: 272, top: 222, width: 303, height: 385 } },
+  { src: 'gorra5.png', out: 'ny-roses-1',  crop: { left: 10, top: 238, width: 295, height: 320 } },
+  { src: 'gorra4.png', out: 'ny-roses-2',  crop: { left: 0, top: 232, width: 320, height: 430 } },
+  { src: 'gorra5.png', out: 'sox-roses-1', crop: { left: 300, top: 232, width: 265, height: 275 } },
+  { src: 'gorra4.png', out: 'sox-roses-2', crop: { left: 258, top: 230, width: 317, height: 350 } },
 
   /* ── New Era · St. Louis Cardinals crema / celeste ──────────────────── */
   { src: 'gorra37.png', out: 'cardinals-1' },
@@ -206,6 +206,11 @@ async function exportar(buf, nombre) {
 }
 
 async function procesarFoto(job) {
+  // La foto completa se guarda aparte: de ella sale el fondo difuminado. Si
+  // el fondo se sacara del recorte (que va pegado a la gorra) el resultado
+  // sería una gorra borrosa detrás de la gorra nítida, no un fondo.
+  const completa = await sharp(path.join(SRC, job.src)).removeAlpha().png().toBuffer();
+
   let img = sharp(path.join(SRC, job.src));
   if (job.crop) img = img.extract(job.crop);
   let buf = await img.removeAlpha().png().toBuffer();
@@ -240,16 +245,16 @@ async function procesarFoto(job) {
     }).png().toBuffer();
     pieza = gorra;
   } else {
-    // Fondo con textura (madera, estudio oscuro, neón): se amplía la propia
-    // foto muy desenfocada y se difuminan los bordes de la copia nítida, así
-    // no queda ningún rectángulo marcado.
-    fondo = await sharp(buf)
+    // Fondo con textura (madera, estudio oscuro, neón): se amplía la FOTO
+    // COMPLETA muy desenfocada y se difuminan los bordes de la copia nítida,
+    // así no queda ningún rectángulo marcado.
+    fondo = await sharp(completa)
       .resize({ width: LADO, height: LADO, fit: 'cover', position: 'centre' })
-      .blur(38)
-      .modulate({ saturation: 0.85 })
+      .blur(42)
+      .modulate({ saturation: 0.8, brightness: 0.92 })
       .png()
       .toBuffer();
-    pieza = await difuminarBordes(gorra, 16);
+    pieza = await difuminarBordes(gorra, 14);
   }
 
   buf = await sharp(fondo)
