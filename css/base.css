@@ -214,12 +214,24 @@ h1, h2, h3, h4 {
 }
 .seccion-cabeza .eyebrow { margin-bottom: var(--e2); }
 .seccion-cabeza p { margin-top: var(--e2); }
+/* Par de botones de redes: en celular se reparten el ancho, en pantalla ancha
+   se quedan del tamaño de su texto para no estirarse de lado a lado. */
+.redes { display: flex; gap: var(--e2); flex-wrap: wrap; }
+.redes .btn { flex: 1 1 auto; }
+@media (min-width: 700px) { .redes .btn { flex: 0 0 auto; } }
 
 .solo-lectores {
   position: absolute; width: 1px; height: 1px;
   padding: 0; overflow: hidden; clip: rect(0 0 0 0);
   white-space: nowrap; border: 0;
 }
+
+/* El [hidden]{display:none} del navegador pierde contra cualquier regla de
+   esta hoja que fije display (.btn, .menu a, .footer-col a…), así que el
+   `elemento.hidden = true` del JS no escondía nada. Se refuerza aquí para
+   que valga en todo el sitio: mando del carrusel, flechas de los rieles,
+   avisos del carrito, campos opcionales del checkout y enlaces de redes. */
+[hidden] { display: none !important; }
 
 .saltar {
   position: absolute; left: var(--e4); top: -60px; z-index: 999;

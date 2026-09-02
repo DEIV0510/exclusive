@@ -36,6 +36,10 @@ window.ECM.CONFIG = {
     usuario: 'exclusive_caps_med',
     url: 'https://instagram.com/exclusive_caps_med',
   },
+  tiktok: {
+    usuario: 'exclusive_caps_med',
+    url: 'https://www.tiktok.com/@exclusive_caps_med',
+  },
 
   /* ── 4. SITIO ─────────────────────────────────────────────────────────────
      url: dominio final. Se usa para las etiquetas canonical, Open Graph,

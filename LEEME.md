@@ -14,6 +14,7 @@ hosting y funciona.
 | Poner precios | `js/productos.js` | el campo `precio` de cada gorra |
 | Agregar una gorra nueva | `js/productos.js` | copio un bloque completo |
 | Cambiar el Instagram | `js/config.js` | `instagram.usuario` y `instagram.url` |
+| Cambiar el TikTok | `js/config.js` | `tiktok.usuario` y `tiktok.url` |
 | Cambiar las preguntas frecuentes | `js/config.js` | la lista `faq` |
 | Cambiar el carrusel de la portada | `js/config.js` | la lista `carrusel` |
 | Cambiar las colecciones Melos Caps | `js/productos.js` | la lista `COLECCIONES` al final |
@@ -42,6 +43,34 @@ whatsapp: {
 Con eso queda actualizado **todo**: el botón del menú, la barra de abajo, los
 botones de cada gorra, el pie de página y el mensaje del pedido. No hay que
 buscar el número en ningún otro archivo.
+
+---
+
+## 1b. Cambiar las redes sociales
+
+Instagram y TikTok salen los dos del mismo sitio, `js/config.js`:
+
+```js
+instagram: {
+  usuario: 'exclusive_caps_med',
+  url: 'https://instagram.com/exclusive_caps_med',
+},
+tiktok: {
+  usuario: 'exclusive_caps_med',
+  url: 'https://www.tiktok.com/@exclusive_caps_med',
+},
+```
+
+Con eso se actualizan solos los enlaces del menú, del pie de página y de la
+sección de entregas, y también la ficha que lee Google para saber que esos
+perfiles son de la misma tienda.
+
+- La `url` va **sin** los códigos que TikTok pega al compartir (`?_r=1&_t=…`).
+  Son de seguimiento, no hacen falta y se ven mal.
+- Si algún día dejas de usar TikTok, borra el bloque `tiktok` entero: los
+  enlaces desaparecen solos en vez de quedar apuntando a ninguna parte.
+
+Después de cambiarlo: `node _tools/build-paginas.js`
 
 ---
 

@@ -136,7 +136,8 @@ const ORG = {
     width: 512, height: 512,
   },
   image: abs('assets/logo/og-image.jpg'),
-  sameAs: [CONFIG.instagram.url],
+  // Le dice a Google que estos perfiles son de la misma tienda
+  sameAs: [CONFIG.instagram.url, CONFIG.tiktok && CONFIG.tiktok.url].filter(Boolean),
   address: {
     '@type': 'PostalAddress',
     addressLocality: CONFIG.ciudad,

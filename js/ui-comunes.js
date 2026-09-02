@@ -35,6 +35,17 @@
     u.$$('[data-ig-usuario]').forEach(function (el) {
       el.textContent = '@' + CONFIG.instagram.usuario;
     });
+    // TikTok es opcional: si algún día se borra el bloque de config.js, el
+    // enlace se quita entero (y su fila del pie) en vez de quedar en "#".
+    var tt = CONFIG.tiktok;
+    u.$$('[data-tt]').forEach(function (a) {
+      if (tt && tt.url) { a.href = tt.url; return; }
+      var fuera = a.closest('li') || a;
+      fuera.remove();
+    });
+    u.$$('[data-tt-usuario]').forEach(function (el) {
+      if (tt && tt.usuario) el.textContent = '@' + tt.usuario;
+    });
     u.$$('[data-marca]').forEach(function (el) { el.textContent = CONFIG.marca; });
     u.$$('[data-ciudad]').forEach(function (el) {
       el.textContent = CONFIG.ciudad + ', Colombia';
