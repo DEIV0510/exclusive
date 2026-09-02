@@ -65,14 +65,22 @@ window.ECM.CONFIG = {
     marcas: ['New Era', 'Melos Caps', 'Americanino'],
     tipos: ['Béisbol', 'Trucker', 'Snapback', 'Dad Hat', 'Fitted'],
     // Muestras del filtro por color. El "hex" solo pinta el círculo.
+    // Para agregar un color nuevo, añade una línea aquí y ya lo puedes usar
+    // en el campo "colores" de cualquier gorra.
     colores: {
-      'Negro':      '#1B1B1F',
-      'Crema':      '#ECE6DA',
-      'Blanco':     '#F2F4F7',
-      'Gris':       '#8A8B88',
-      'Azul Royal': '#0A55B5',
-      'Rojo':       '#C8202D',
-      'Verde':      '#2E7D46',
+      'Negro':         '#1B1B1F',
+      'Blanco':        '#F2F4F7',
+      'Crema':         '#ECE6DA',
+      'Beige':         '#D9C79A',
+      'Gris':          '#8A8B88',
+      'Azul marino':   '#1E2A44',
+      'Azul Royal':    '#0A55B5',
+      'Celeste':       '#A8C8E8',
+      'Verde azulado': '#157A7A',
+      'Verde':         '#2E7D46',
+      'Rojo':          '#C8202D',
+      'Vino':          '#8C1F35',
+      'Naranja':       '#C96A1E',
     },
   },
 
@@ -91,21 +99,32 @@ window.ECM.CONFIG = {
      Después de cambiar esto:  node _tools/build-paginas.js               */
   carrusel: [
     {
-      producto: 'new-era-9fifty-ny-yankees-roses',
-      titulo: 'NY Roses',
-      texto: 'El clásico NY atravesado por rosas rojas bordadas.',
+      // Diapositiva de marca: usa una foto suelta en vez de un producto.
+      // "posicion" mueve el encuadre de la foto (izquierda/derecha, arriba/abajo).
+      imagen: 'portada',
+      posicion: '50% 7%',
+      eyebrow: 'Medellín · Nacionales e importadas',
+      titulo: 'Tu gorra habla primero',
+      texto: 'Seleccionadas una por una. Pedidos por WhatsApp.',
+      cta: 'Ver el catálogo',
+      enlace: 'catalogo.html',
+    },
+    {
+      producto: 'new-era-9fifty-charlotte-hornets',
+      titulo: 'Charlotte Hornets',
+      texto: 'Corona crema, visera verde azulado y el avispón a todo color.',
       cta: 'Comprar ahora',
     },
     {
-      producto: 'new-era-9fifty-shohei-ohtani-17',
-      titulo: 'Ohtani 17',
-      texto: 'Corona crema, visera azul royal y bordado a varios hilos.',
+      producto: 'new-era-9fifty-atlanta-braves-1999',
+      titulo: 'Braves 1999',
+      texto: 'Naranja y crema con parche de 1999 e interior rojo.',
       cta: 'Comprar ahora',
     },
     {
-      producto: 'new-era-9fifty-white-sox-roses',
-      titulo: 'Sox Roses',
-      texto: 'Negro y blanco con un ramo de rosas al costado.',
+      producto: 'americanino-trucker-creative-campus',
+      titulo: 'Creative Campus',
+      texto: 'Trucker crema con visera roja en gamuza.',
       cta: 'Comprar ahora',
     },
   ],

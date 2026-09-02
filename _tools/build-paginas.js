@@ -28,10 +28,14 @@ function cargarDatos() {
     const codigo = fs.readFileSync(path.join(RAIZ, 'js', f), 'utf8');
     vm.runInContext(codigo, sandbox, { filename: f });
   });
-  return { CONFIG: sandbox.window.ECM.CONFIG, PRODUCTOS: sandbox.window.ECM.PRODUCTOS };
+  return {
+    CONFIG: sandbox.window.ECM.CONFIG,
+    PRODUCTOS: sandbox.window.ECM.PRODUCTOS,
+    COLECCIONES: sandbox.window.ECM.COLECCIONES || [],
+  };
 }
 
-const { CONFIG, PRODUCTOS } = cargarDatos();
+const { CONFIG, PRODUCTOS, COLECCIONES } = cargarDatos();
 const BASE = String(CONFIG.sitio.url).replace(/\/+$/, '');
 
 /* ── Utilidades ────────────────────────────────────────────────────────── */
@@ -307,11 +311,14 @@ function slidesDeConfig() {
   const porSlug = (s) => PRODUCTOS.filter((p) => p.slug === s)[0];
 
   let slides = (CONFIG.carrusel || [])
-    .map((s) => ({ ...s, p: porSlug(s.producto) }))
-    .filter((s) => {
-      if (!s.p) console.log(`  ! El carrusel apunta a "${s.producto}", que no está en productos.js`);
-      return s.p;
-    });
+    .map((s) => {
+      // Una diapositiva puede colgar de un producto o traer su propia foto
+      if (s.imagen) return { ...s, suelta: true };
+      const p = porSlug(s.producto);
+      if (!p) console.log(`  ! El carrusel apunta a "${s.producto}", que no está en productos.js`);
+      return p ? { ...s, p } : null;
+    })
+    .filter(Boolean);
 
   if (!slides.length) {
     slides = PRODUCTOS.filter((p) => p.destacado).slice(0, 4).map((p) => ({ p }));
@@ -320,15 +327,26 @@ function slidesDeConfig() {
   return slides;
 }
 
+function fotoPrincipalDeSlide(s) {
+  return s.suelta ? s.imagen : s.p.imagenes[0];
+}
+
 function diapositivas() {
   const slides = slidesDeConfig();
 
   return slides.map((s, i) => {
     const p = s.p;
-    const titulo = s.titulo || p.nombre;
-    const texto = s.texto || p.descripcion;
+    const titulo = s.titulo || (p && p.nombre) || '';
+    const texto = s.texto || (p && p.descripcion) || '';
     const cta = s.cta || 'Comprar ahora';
-    const base = p.imagenes[0];
+    const enlace = s.enlace || (p ? urlProducto(p) : 'catalogo.html');
+    const eyebrow = s.eyebrow || (p ? `${p.marca}${p.modelo ? ' ' + p.modelo : ''}` : '');
+    const alt = s.suelta
+      ? `${CONFIG.marca} — ${titulo}`
+      : altDe(p, 0);
+    const base = fotoPrincipalDeSlide(s);
+    const estilo = s.posicion ? ` style="object-position:${s.posicion}"` : '';
+
     // Solo la primera se carga de inmediato; las demás esperan a que el
     // usuario deslice, para no pelear con la imagen principal.
     const carga = i === 0
@@ -341,19 +359,41 @@ function diapositivas() {
           <picture>
             <source type="image/webp"
                     srcset="assets/img/${base}-400.webp 400w, assets/img/${base}-760.webp 760w, assets/img/${base}-1200.webp 1200w"
-                    sizes="(min-width: 900px) 560px, 100vw">
-            <img src="assets/img/${base}-760.jpg" alt="${esc(altDe(p, 0))}"
-                 width="760" height="760"${carga}>
+                    sizes="(min-width: 900px) 60vw, 100vw">
+            <img src="assets/img/${base}-760.jpg" alt="${esc(alt)}"
+                 width="760" height="760"${estilo}${carga}>
           </picture>
         </div>
         <div class="dia-txt">
-          <span class="eyebrow">${esc(p.marca)}${p.modelo ? ' ' + esc(p.modelo) : ''}</span>
+          ${eyebrow ? `<span class="eyebrow">${esc(eyebrow)}</span>` : ''}
           <h2 class="dia-titulo">${esc(titulo)}</h2>
           <p class="dia-frase">${esc(texto)}</p>
-          <a class="btn btn--primario dia-cta" href="${urlProducto(p)}">${esc(cta)}</a>
+          <a class="btn btn--primario dia-cta" href="${enlace}">${esc(cta)}</a>
         </div>
       </article>`;
   }).join('\n      ');
+}
+
+/* ── Colecciones (pósters de campaña) ──────────────────────────────────── */
+function colecciones() {
+  const lista = COLECCIONES || [];
+  if (!lista.length) return '';
+  return lista.map((c) => {
+    const wa = 'https://wa.me/' + CONFIG.whatsapp.numero + '?text=' +
+      encodeURIComponent(`Hola ${CONFIG.marca}, quiero información sobre la colección ${c.nombre}.`);
+    return `<a class="coleccion" href="${wa}" target="_blank" rel="noopener">
+          <picture>
+            <source type="image/webp" srcset="assets/img/${c.imagen}-400.webp 400w, assets/img/${c.imagen}-760.webp 760w"
+                    sizes="(min-width: 900px) 300px, 62vw">
+            <img src="assets/img/${c.imagen}-760.jpg" alt="Colección ${esc(c.nombre)} de Melos Caps"
+                 width="600" height="760" loading="lazy" decoding="async">
+          </picture>
+          <span class="coleccion-txt">
+            <b>${esc(c.nombre)}</b>
+            <small>${esc(c.nota || '')}</small>
+          </span>
+        </a>`;
+  }).join('\n        ');
 }
 
 /* ── Página: home ──────────────────────────────────────────────────────── */
@@ -367,11 +407,12 @@ function construirHome() {
   const cuerpo = leer('cuerpo-home.html')
     .replace('{{FAQ}}', faq)
     .replace('{{H1}}', esc(`${CONFIG.marca} — gorras nacionales e importadas en ${CONFIG.ciudad}`))
-    .replace('{{DIAPOSITIVAS}}', diapositivas());
+    .replace('{{DIAPOSITIVAS}}', diapositivas())
+    .replace('{{COLECCIONES}}', colecciones());
 
   // Se precarga la foto de la PRIMERA diapositiva: es el elemento más grande
   // de la pantalla inicial y marca el tiempo de carga percibido.
-  const primeraFoto = slidesDeConfig()[0].p.imagenes[0];
+  const primeraFoto = fotoPrincipalDeSlide(slidesDeConfig()[0]);
   const precarga = `<link rel="preload" as="image" fetchpriority="high"
       href="assets/img/${primeraFoto}-760.webp"
       imagesrcset="assets/img/${primeraFoto}-400.webp 400w, assets/img/${primeraFoto}-760.webp 760w, assets/img/${primeraFoto}-1200.webp 1200w"

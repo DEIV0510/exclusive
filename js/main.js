@@ -45,10 +45,15 @@
       riel.innerHTML = partes.join('');
     }
 
-    // Rejilla de la portada
+    // Rejilla de la portada: solo una selección. El catálogo completo vive en
+    // catalogo.html; meterlo entero aquí duplicaba el peso de la primera
+    // visita sin que el cliente viera nada nuevo.
     var grid = u.$('#home-grid');
     if (grid) {
-      ECM.Catalogo.pintarRejilla(grid, ECM.PRODUCTOS, 2);
+      var destacados = ECM.PRODUCTOS.filter(function (p) { return p.destacado; });
+      var seleccion = (destacados.length ? destacados : ECM.PRODUCTOS).slice(0, 8);
+      ECM.Catalogo.pintarRejilla(grid, seleccion, 2);
+
       var conteo = u.$('#home-conteo');
       if (conteo) {
         var n = ECM.PRODUCTOS.length;

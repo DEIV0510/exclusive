@@ -16,6 +16,7 @@ hosting y funciona.
 | Cambiar el Instagram | `js/config.js` | `instagram.usuario` y `instagram.url` |
 | Cambiar las preguntas frecuentes | `js/config.js` | la lista `faq` |
 | Cambiar el carrusel de la portada | `js/config.js` | la lista `carrusel` |
+| Cambiar las colecciones Melos Caps | `js/productos.js` | la lista `COLECCIONES` al final |
 
 Después de tocar `js/productos.js` o el dominio, hay que correr **un solo comando**
 (ver [Regenerar la web](#regenerar-la-web)).
@@ -100,6 +101,26 @@ anchas pasa a dos columnas (texto | foto) a propósito: tus fotos miden entre
 266 y 600 px y estiradas a lo ancho de un monitor se verían borrosas.
 
 Después de cambiarlo: `node _tools/build-paginas.js`
+
+---
+
+## 3b. Las colecciones de Melos Caps
+
+Debajo del catálogo hay una franja con los pósters de campaña de Melos Caps.
+No son productos que se puedan agregar al carrito: cada póster lleva a WhatsApp
+para preguntar por esa colección.
+
+Se configuran al final de `js/productos.js`, en la lista `COLECCIONES`:
+
+```js
+{ imagen: 'col-haru', nombre: 'Haru', nota: 'Bordados japoneses sobre corona crema' },
+```
+
+**¿Por qué no están en el catálogo?** Las fotos que nos pasaste de Melos Caps son
+afiches de colección: cada uno muestra la misma gorra en cuatro ángulos sobre un
+fondo ilustrado, y uno de ellos dice «coming soon». No hay fotos sueltas de
+producto ni nombres comerciales confirmados. Cuando nos pases fotos sobre fondo
+limpio y los nombres, las subimos al catálogo como gorras que se pueden comprar.
 
 ---
 
@@ -304,7 +325,9 @@ exclusive-caps-med/
 
 ## 12. Pendientes
 
-- [ ] Cargar los precios reales en `js/productos.js`.
+- [ ] Cargar los precios reales de las 16 gorras en `js/productos.js`.
 - [ ] Comprar el dominio y actualizarlo en `js/config.js` → `sitio.url`.
-- [ ] Enviar más fotos de producto para ampliar el catálogo.
+- [ ] Enviar fotos de producto sueltas de las gorras Melos Caps para pasarlas de
+      «colección» a producto comprable.
+- [ ] Confirmar disponibilidad real de cada modelo (hoy todas salen disponibles).
 - [ ] Definir políticas de envío y pago para poder anunciarlas.
