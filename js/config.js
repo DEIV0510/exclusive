@@ -102,10 +102,9 @@ window.ECM.CONFIG = {
       // Diapositiva de marca: usa una foto suelta en vez de un producto.
       // "posicion" mueve el encuadre de la foto (izquierda/derecha, arriba/abajo).
       imagen: 'portada',
-      posicion: '50% 7%',
+      posicion: '50% 3%',
       eyebrow: 'Medellín · Nacionales e importadas',
       titulo: 'Tu gorra habla primero',
-      texto: 'Seleccionadas una por una. Pedidos por WhatsApp.',
       cta: 'Ver el catálogo',
       enlace: 'catalogo.html',
     },

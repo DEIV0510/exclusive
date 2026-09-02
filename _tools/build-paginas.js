@@ -85,8 +85,8 @@ function cabeza({ titulo, descripcion, ruta, imagen, imagenAlt, jsonld, precarga
 <link rel="canonical" href="${canonical}">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 
-<meta name="theme-color" content="#060D22">
-<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#FAF8F4">
+<meta name="color-scheme" content="light">
 
 <meta property="og:site_name" content="${esc(CONFIG.marca)}">
 <meta property="og:locale" content="es_CO">
@@ -367,11 +367,39 @@ function diapositivas() {
         <div class="dia-txt">
           ${eyebrow ? `<span class="eyebrow">${esc(eyebrow)}</span>` : ''}
           <h2 class="dia-titulo">${esc(titulo)}</h2>
-          <p class="dia-frase">${esc(texto)}</p>
+          ${texto ? `<p class="dia-frase">${esc(texto)}</p>` : ''}
           <a class="btn btn--primario dia-cta" href="${enlace}">${esc(cta)}</a>
         </div>
       </article>`;
   }).join('\n      ');
+}
+
+/* ── Mosaico de entregas ───────────────────────────────────────────────────
+   Se arma solo con lo que haya en assets/img: cada foto que el dueño deje en
+   la carpeta "gorras" empezando por "entrega" aparece aquí. Mientras no haya
+   ninguna, la sección se queda con el título y el botón de Instagram — no se
+   inventa un mosaico de relleno.                                          */
+function fotosDeEntrega() {
+  return fs.readdirSync(path.join(RAIZ, 'assets', 'img'))
+    .filter((f) => /^entrega-\d+-400\.webp$/.test(f))
+    .map((f) => f.replace('-400.webp', ''))
+    .sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
+}
+
+function entregas() {
+  const fotos = fotosDeEntrega();
+  if (!fotos.length) return '';
+  const piezas = fotos.map((f) => [
+    '<figure class="mosaico-pieza">',
+    '          <picture>',
+    '            <source type="image/webp" srcset="assets/img/' + f + '-400.webp 400w, assets/img/' + f + '-760.webp 760w"',
+    '                    sizes="(min-width: 900px) 280px, 46vw">',
+    '            <img src="assets/img/' + f + '-760.jpg" alt="Entrega de ' + esc(CONFIG.marca) + ' a un cliente"',
+    '                 width="760" height="760" loading="lazy" decoding="async">',
+    '          </picture>',
+    '        </figure>',
+  ].join('\n')).join('\n        ');
+  return '<div class="mosaico revelar">\n        ' + piezas + '\n      </div>';
 }
 
 /* ── Colecciones (pósters de campaña) ──────────────────────────────────── */
@@ -408,7 +436,12 @@ function construirHome() {
     .replace('{{FAQ}}', faq)
     .replace('{{H1}}', esc(`${CONFIG.marca} — gorras nacionales e importadas en ${CONFIG.ciudad}`))
     .replace('{{DIAPOSITIVAS}}', diapositivas())
-    .replace('{{COLECCIONES}}', colecciones());
+    .replace('{{COLECCIONES}}', colecciones())
+    .replace('{{ENTREGAS}}', entregas())
+    .replace('{{ENTREGAS_TITULO}}', fotosDeEntrega().length ? 'Entregas' : 'Míralas de cerca')
+    .replace('{{ENTREGAS_NOTA}}', fotosDeEntrega().length
+      ? 'Gorras que ya salieron para su dueño.'
+      : 'Publicamos cada gorra que sale para su dueño.');
 
   // Se precarga la foto de la PRIMERA diapositiva: es el elemento más grande
   // de la pantalla inicial y marca el tiempo de carga percibido.
@@ -639,8 +672,8 @@ function construirManifest() {
     description: CONFIG.descripcionCorta,
     start_url: './index.html',
     display: 'standalone',
-    background_color: '#060D22',
-    theme_color: '#060D22',
+    background_color: '#FAF8F4',
+    theme_color: '#FAF8F4',
     lang: 'es-CO',
     icons: [
       { src: 'assets/logo/icono-192.png', sizes: '192x192', type: 'image/png' },

@@ -37,7 +37,7 @@
 .btn--wa:hover { background: #34e07a; }
 
 .btn--fantasma { color: var(--tx-2); }
-.btn--fantasma:hover { color: var(--tx); background: rgba(255, 255, 255, .06); }
+.btn--fantasma:hover { color: var(--tx); background: rgba(19, 28, 49, .05); }
 
 .btn--bloque { width: 100%; }
 /* 44 px aunque sea "pequeño": por debajo de eso el dedo falla */
@@ -62,7 +62,7 @@
   color: var(--tx);
   transition: background var(--t-rapido), color var(--t-rapido);
 }
-.icono-btn:hover { background: rgba(255, 255, 255, .07); }
+.icono-btn:hover { background: rgba(19, 28, 49, .06); }
 .icono-btn svg { width: 21px; height: 21px; }
 
 /* ── Insignias ─────────────────────────────────────────────────────────── */
@@ -88,13 +88,13 @@
   top: 0;
   z-index: var(--z-header);
   height: var(--h-header);
-  background: rgba(6, 13, 34, .86);
+  background: rgba(250, 248, 244, .88);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--linea);
   transition: background var(--t-medio);
 }
-.header.solido { background: rgba(1, 4, 15, .96); }
+.header.solido { background: rgba(255, 255, 255, .96); }
 
 .header-fila {
   height: var(--h-header);
@@ -132,7 +132,7 @@
   color: var(--tx-2);
   transition: color var(--t-rapido), background var(--t-rapido);
 }
-.nav-esc a:hover { color: var(--tx); background: rgba(255, 255, 255, .06); }
+.nav-esc a:hover { color: var(--tx); background: rgba(19, 28, 49, .05); }
 .nav-esc a[aria-current='page'] { color: var(--tx); background: var(--navy-700); }
 
 .header-acc { display: flex; align-items: center; gap: 0; }
@@ -198,7 +198,7 @@
   z-index: var(--z-barra);
   height: calc(var(--h-barra) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
-  background: rgba(1, 4, 15, .96);
+  background: rgba(255, 255, 255, .97);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--linea);
@@ -231,8 +231,8 @@
   border-radius: 0 0 2px 2px;
   background: var(--brillo);
 }
-.barra-inf .wa { color: var(--wa); }
-.barra-inf .contador { top: 2px; right: 50%; margin-right: -22px; border-color: #01040f; }
+.barra-inf .wa { color: var(--wa-tx); }
+.barra-inf .contador { top: 2px; right: 50%; margin-right: -22px; border-color: #ffffff; }
 
 /* Con el texto muy grande, las etiquetas estorban: quedan solo los iconos */
 @media (max-height: 460px) {
@@ -434,7 +434,7 @@
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, .35);
+  border: 1px solid rgba(19, 28, 49, .22);
   flex: none;
 }
 
@@ -461,7 +461,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-velo);
-  background: rgba(1, 4, 15, .68);
+  background: rgba(19, 28, 49, .45);
   backdrop-filter: blur(3px);
   opacity: 0;
   visibility: hidden;
@@ -552,7 +552,7 @@
   place-items: center;
   color: var(--tx-2);
 }
-.cantidad button:hover { background: rgba(255, 255, 255, .07); color: var(--tx); }
+.cantidad button:hover { background: rgba(19, 28, 49, .06); color: var(--tx); }
 .cantidad button svg { width: 14px; height: 14px; }
 .cantidad output { min-width: 28px; text-align: center; font-size: 14px; font-weight: 700; }
 
@@ -564,7 +564,7 @@
   place-items: center;
   color: var(--tx-3);
 }
-.quitar:hover { color: var(--error); background: rgba(255, 122, 122, .1); }
+.quitar:hover { color: var(--error); background: rgba(196, 48, 43, .09); }
 .quitar svg { width: 16px; height: 16px; }
 
 .carrito-pie {
@@ -720,8 +720,8 @@
 }
 .toast.saliendo { animation: toast-out var(--t-salida) ease-in forwards; }
 .toast svg { width: 20px; height: 20px; flex: none; }
-.toast--ok svg { color: var(--wa); }
-.toast--aviso svg { color: var(--crema); }
+.toast--ok svg { color: var(--wa-tx); }
+.toast--aviso svg { color: var(--aviso); }
 @keyframes toast-in  { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
 @keyframes toast-out { to { opacity: 0; transform: translateY(6px); } }
 
@@ -804,12 +804,12 @@
   place-items: center;
   border-radius: 50%;
   color: var(--tx);
-  background: rgba(6, 13, 34, .92);
+  background: rgba(255, 255, 255, .96);
   border: 1px solid var(--linea-2);
   box-shadow: var(--sombra);
   transition: background var(--t-rapido), border-color var(--t-rapido), opacity var(--t-rapido);
 }
-.riel-flecha:hover { background: var(--azul); border-color: var(--azul); }
+.riel-flecha:hover { background: var(--azul); border-color: var(--azul); color: var(--sobre-azul); }
 .riel-flecha svg { width: 18px; height: 18px; }
 .riel-flecha--izq { left: -6px; }
 .riel-flecha--izq svg { transform: rotate(180deg); }
@@ -823,4 +823,30 @@
 @media (min-width: 1280px) {
   .riel-flecha--izq { left: -20px; }
   .riel-flecha--der { right: -20px; }
+}
+
+/* ── Riel de productos ─────────────────────────────────────────────────────
+   La misma tarjeta del catálogo, pero en fila que se desliza. Se usa en la
+   portada y en los relacionados de la ficha: así el bloque ocupa una altura
+   fija en vez de estirarse hacia abajo con cada producto nuevo.          */
+.riel-productos { gap: var(--e3); padding-block: var(--e1) var(--e3); }
+
+.riel-productos > .card {
+  flex: 0 0 auto;
+  width: 62vw;
+  max-width: 260px;
+}
+/* En un riel no hay hueco impar que rellenar */
+.riel-productos > .card:last-child:nth-child(odd) {
+  grid-column: auto;
+  flex-direction: column;
+  width: 62vw;
+  max-width: 260px;
+}
+.riel-productos > .card:last-child:nth-child(odd) .card-media { width: auto; flex: initial; }
+
+@media (min-width: 600px) { .riel-productos > .card { width: 240px; } }
+@media (min-width: 900px) {
+  .riel-productos > .card,
+  .riel-productos > .card:last-child:nth-child(odd) { width: 252px; max-width: none; }
 }

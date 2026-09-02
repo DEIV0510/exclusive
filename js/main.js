@@ -12,39 +12,6 @@
   function pintarHome() {
     var CONFIG = ECM.CONFIG;
 
-    // Riel de accesos rápidos: solo lleva a filtros que devuelven algo
-    var riel = u.$('#riel-chips');
-    if (riel) {
-      var partes = ['<a class="chip" href="catalogo.html">Ver todas</a>'];
-      CONFIG.taxonomia.tipos.forEach(function (t) {
-        var n = ECM.PRODUCTOS.filter(function (p) { return p.tipo === t; }).length;
-        partes.push(n
-          ? '<a class="chip" href="catalogo.html?tipo=' + encodeURIComponent(t) + '">' +
-              u.esc(t) + ' <span class="n">' + n + '</span></a>'
-          : '<span class="chip" aria-disabled="true" title="Pronto en catálogo">' +
-              u.esc(t) + '</span>');
-      });
-      // Solo los 4 colores más presentes: el riel es un atajo, no el filtro completo
-      Object.keys(CONFIG.taxonomia.colores)
-        .map(function (c) {
-          return {
-            nombre: c,
-            n: ECM.PRODUCTOS.filter(function (p) {
-              return (p.colores || []).indexOf(c) !== -1;
-            }).length,
-          };
-        })
-        .filter(function (c) { return c.n > 0; })
-        .sort(function (a, b) { return b.n - a.n; })
-        .slice(0, 4)
-        .forEach(function (c) {
-          partes.push('<a class="chip" href="catalogo.html?color=' + encodeURIComponent(c.nombre) + '">' +
-            '<span class="muestra" style="background:' + CONFIG.taxonomia.colores[c.nombre] + '"></span>' +
-            u.esc(c.nombre) + '</a>');
-        });
-      riel.innerHTML = partes.join('');
-    }
-
     // Rejilla de la portada: solo una selección. El catálogo completo vive en
     // catalogo.html; meterlo entero aquí duplicaba el peso de la primera
     // visita sin que el cliente viera nada nuevo.
@@ -95,20 +62,6 @@
       pasos.innerHTML = CONFIG.pasos.map(function (p) {
         return '<div class="paso"><div><b>' + u.esc(p.titulo) + '</b>' +
           '<p>' + u.esc(p.texto) + '</p></div></div>';
-      }).join('');
-    }
-
-    // Instagram: fotos reales del catálogo, sin simular publicaciones
-    var ig = u.$('#ig-tira');
-    if (ig) {
-      var fotos = [];
-      ECM.PRODUCTOS.forEach(function (p) {
-        (p.imagenes || []).forEach(function (im) { fotos.push({ im: im, p: p }); });
-      });
-      ig.innerHTML = fotos.slice(0, 6).map(function (f) {
-        return '<a href="' + u.urlProducto(f.p) + '" aria-label="Ver ' + u.esc(f.p.nombre) + '">' +
-          '<img src="assets/img/' + f.im + '-400.webp" alt="' + u.esc(f.p.nombre) + '"' +
-          ' loading="lazy" decoding="async" width="400" height="400"></a>';
       }).join('');
     }
   }

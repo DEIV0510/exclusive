@@ -20,23 +20,8 @@
     </div>
   </section>
 
-  <!-- ══ ACCESOS RÁPIDOS ══ -->
-  <section class="contenedor" style="padding-block:16px" aria-label="Accesos rápidos al catálogo">
-    <div class="riel-caja">
-      <button type="button" class="riel-flecha riel-flecha--izq" data-riel-ir="-1"
-              aria-label="Ver accesos anteriores" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
-      </button>
-      <div class="riel" id="riel-chips" data-riel></div>
-      <button type="button" class="riel-flecha riel-flecha--der" data-riel-ir="1"
-              aria-label="Ver más accesos" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
-      </button>
-    </div>
-  </section>
-
   <!-- ══ DISPONIBLES ══ -->
-  <section class="seccion seccion--ceñida" id="disponibles" style="padding-top:8px">
+  <section class="seccion seccion--ceñida" id="disponibles">
     <div class="contenedor">
       <div class="seccion-cabeza">
         <div>
@@ -47,7 +32,20 @@
           Ver catálogo · <span id="home-conteo">—</span>
         </a>
       </div>
-      <div class="rejilla" id="home-grid"></div>
+
+      <!-- Se desliza en horizontal: la retícula vertical empujaba todo lo
+           demás muy abajo y obligaba a scrollear mucho antes de ver nada más. -->
+      <div class="riel-caja">
+        <button type="button" class="riel-flecha riel-flecha--izq" data-riel-ir="-1"
+                aria-label="Ver gorras anteriores" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
+        </button>
+        <div class="riel riel-productos" id="home-grid" data-riel></div>
+        <button type="button" class="riel-flecha riel-flecha--der" data-riel-ir="1"
+                aria-label="Ver más gorras" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
+        </button>
+      </div>
     </div>
   </section>
 
@@ -147,21 +145,21 @@
     </div>
   </section>
 
-  <!-- ══ INSTAGRAM ══ -->
-  <section class="seccion seccion--ceñida">
+  <!-- ══ ENTREGAS ══ -->
+  <section class="seccion seccion--ceñida" id="entregas">
     <div class="contenedor">
       <div class="seccion-cabeza revelar">
         <div>
           <span class="eyebrow" data-ig-usuario>@exclusive_caps_med</span>
-          <h2 class="t-sec">Míralas de cerca</h2>
-          <p class="meta">Fotos reales de lo que tenemos en catálogo.</p>
+          <h2 class="t-sec">{{ENTREGAS_TITULO}}</h2>
+          <p class="meta">{{ENTREGAS_NOTA}}</p>
         </div>
         <a class="btn btn--primario" data-ig href="#" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-instagram"></use></svg>
           Seguir en Instagram
         </a>
       </div>
-      <div class="ig-tira revelar" id="ig-tira"></div>
+      {{ENTREGAS}}
     </div>
   </section>
 

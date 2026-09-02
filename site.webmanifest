@@ -4,8 +4,8 @@
   "description": "Gorras nacionales e importadas. Venta virtual desde Medellín, Colombia.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#060D22",
-  "theme_color": "#060D22",
+  "background_color": "#FAF8F4",
+  "theme_color": "#FAF8F4",
   "lang": "es-CO",
   "icons": [
     {

@@ -96,9 +96,14 @@ otra copia uno y cambia el `producto` por el `slug` de la gorra.
 - Deja de rotar apenas el visitante desliza o toca una flecha, y no rota nunca
   si el celular tiene activado "reducir movimiento".
 
-En celular la foto va a todo el ancho como en las tiendas grandes. En pantallas
-anchas pasa a dos columnas (texto | foto) a propósito: tus fotos miden entre
-266 y 600 px y estiradas a lo ancho de un monitor se verían borrosas.
+En celular la foto va arriba, en un cuadro a todo el ancho, y el texto debajo
+sobre el fondo claro. Se hizo así porque encima de una gorra oscura el titular
+no se alcanzaba a leer. En pantallas anchas pasa a dos columnas (texto | foto).
+
+La primera diapositiva es la **portada**: en vez de `producto` lleva `imagen`
+(el nombre del archivo en `assets/img`, sin el `-760.webp`) y no lleva `texto`.
+Con `posicion` mueves el encuadre: `'50% 3%'` es «centrada a lo ancho, casi
+pegada arriba». Súbele el segundo número para bajar el encuadre.
 
 Después de cambiarlo: `node _tools/build-paginas.js`
 
@@ -121,6 +126,31 @@ afiches de colección: cada uno muestra la misma gorra en cuatro ángulos sobre 
 fondo ilustrado, y uno de ellos dice «coming soon». No hay fotos sueltas de
 producto ni nombres comerciales confirmados. Cuando nos pases fotos sobre fondo
 limpio y los nombres, las subimos al catálogo como gorras que se pueden comprar.
+
+---
+
+## 3c. El mosaico de «Entregas»
+
+Cerca del final de la portada hay una sección para mostrar **fotos reales de
+gorras entregadas a clientes**. Se llena sola: no hay que tocar ningún archivo
+de configuración.
+
+1. Guarda las fotos en la misma carpeta `gorras` donde están las de producto.
+2. Ponles un nombre que **empiece por `entrega`**: `entrega1.jpg`,
+   `entrega-daniela.png`, `entrega 07.jpeg`… el orden del mosaico es el orden
+   alfabético de esos nombres.
+3. Corre los dos comandos de siempre:
+
+```
+node _tools/build-images.js
+node _tools/build-paginas.js
+```
+
+Las fotos se recortan solas a cuadrado buscando lo importante de la imagen. La
+primera ocupa el doble de espacio para que el mosaico no parezca una tabla.
+
+**Mientras no haya ninguna foto**, la sección no muestra un mosaico vacío ni de
+relleno: se queda con el título «Míralas de cerca» y el botón de Instagram.
 
 ---
 
@@ -331,3 +361,5 @@ exclusive-caps-med/
       «colección» a producto comprable.
 - [ ] Confirmar disponibilidad real de cada modelo (hoy todas salen disponibles).
 - [ ] Definir políticas de envío y pago para poder anunciarlas.
+- [ ] Mandar fotos de gorras entregadas a clientes para llenar el mosaico de
+      «Entregas» (ver el punto 3c).

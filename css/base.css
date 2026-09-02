@@ -24,38 +24,44 @@
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2122;
 }
 
-/* ── Tokens ────────────────────────────────────────────────────────────── */
+/* ── Tokens ──────────────────────────────────────────────────────────────
+   Tema claro sobre blanco hueso. Los nombres van de -950 (el tono más
+   marcado) a -600 (el más suave), igual que antes, para no tener que tocar
+   cada regla; lo que cambia son los valores. Los contrastes están calculados
+   contra el fondo general (--hueso-900) y cumplen WCAG AA.                */
 :root {
   /* Superficies */
-  --navy-950: #01040F;
-  --navy-900: #060D22;
-  --navy-800: #0C1730;
-  --navy-700: #142344;
-  --navy-600: #1B2E52;
+  --navy-950: #EFEAE0;  /* pie de página y pantalla de carga */
+  --navy-900: #FAF8F4;  /* fondo general: blanco hueso */
+  --navy-800: #FFFFFF;  /* tarjetas, paneles y modales */
+  --navy-700: #F2EEE6;  /* superficies suaves: deshabilitado, marco de foto */
+  --navy-600: #E7E1D5;  /* estado seleccionado suave */
 
   /* Marca */
-  --azul: #0C63C9;
-  --azul-h: #1272DD;
-  --brillo: #2E90FF;
-  --brillo-h: #55A5FF;
-  --hielo: #A9E1FD;
-  --crema: #EFE3CC;
+  --azul: #0C5FCB;      /* botón primario · blanco encima 6.0:1 */
+  --azul-h: #0A4EA9;
+  --brillo: #1257C9;    /* enlaces y rótulos · 6.1:1 sobre el fondo */
+  --brillo-h: #0B4092;
+  --hielo: #BFE0FA;     /* acento claro: insignia EXCLUSIVO (texto oscuro) */
+  --crema: #E8D8B4;     /* acento editorial: insignia DESTACADO */
 
   /* Texto */
-  --tx: #F4F6FA;
-  --tx-2: #C2CDE0;
-  --tx-3: #8A9AB5;
+  --tx: #131C31;        /* 16.4:1 */
+  --tx-2: #454F68;      /* 7.6:1 */
+  --tx-3: #5A6580;      /* 5.0:1 */
   --sobre-azul: #FFFFFF;
-  --sobre-claro: #01040F;
+  --sobre-claro: #131C31;
 
   /* Líneas: -deco es decorativa, -ui es para controles reales (3.6:1) */
-  --linea: #1E3358;
-  --linea-2: #2C4A7A;
-  --linea-ui: #56719E;
+  --linea: #E4DED2;
+  --linea-2: #D3CBBB;
+  --linea-ui: #7C8394;
 
   /* Semánticos */
+  --aviso: #A9700F;
   --wa: #25D366;
-  --error: #FF7A7A;
+  --wa-tx: #0E7A38;
+  --error: #C4302B;
 
   /* Tipografía */
   --f-display: 'Archivo', 'Arial Narrow', system-ui, sans-serif;
@@ -71,8 +77,8 @@
   --r-lg: 20px;
   --r-full: 999px;
 
-  --sombra: 0 8px 24px rgba(0, 0, 0, .38);
-  --sombra-alta: 0 20px 56px rgba(0, 0, 0, .55);
+  --sombra: 0 6px 20px rgba(19, 28, 49, .09);
+  --sombra-alta: 0 18px 48px rgba(19, 28, 49, .16);
 
   --t-rapido: 140ms cubic-bezier(.2, 0, .2, 1);
   --t-medio: 220ms cubic-bezier(.2, 0, .2, 1);
@@ -105,7 +111,7 @@
 
 html {
   -webkit-text-size-adjust: 100%;
-  color-scheme: dark;
+  color-scheme: light;
   background: var(--navy-900);
   /* clip y NO hidden: hidden anularía todos los position:sticky del sitio */
   overflow-x: clip;
@@ -139,7 +145,7 @@ a { color: inherit; text-decoration: none; }
 ul, ol { list-style: none; padding: 0; }
 
 :focus-visible {
-  outline: 2px solid var(--hielo);
+  outline: 2px solid var(--azul);
   outline-offset: 2px;
   border-radius: 3px;
 }
@@ -242,7 +248,7 @@ h1, h2, h3, h4 {
   background-image:
     repeating-linear-gradient(
       45deg,
-      rgba(169, 225, 253, .028) 0 1px,
+      rgba(19, 28, 49, .035) 0 1px,
       transparent 1px 5px
     );
 }
@@ -275,7 +281,7 @@ h1, h2, h3, h4 {
   z-index: var(--z-carga);
   display: grid;
   place-items: center;
-  background: radial-gradient(circle at 50% 42%, var(--navy-800), var(--navy-950) 72%);
+  background: radial-gradient(circle at 50% 42%, #FFFFFF, var(--navy-950) 76%);
   transition: opacity 320ms ease, visibility 320ms;
 }
 #carga.fuera { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -285,7 +291,7 @@ h1, h2, h3, h4 {
 .carga-emblema {
   width: clamp(104px, 26vw, 132px);
   aspect-ratio: 1;
-  filter: drop-shadow(0 0 28px rgba(46, 144, 255, .35));
+  filter: drop-shadow(0 8px 22px rgba(19, 28, 49, .16));
   animation: emblema-entra 620ms cubic-bezier(.16, .84, .34, 1) both;
 }
 @keyframes emblema-entra {
@@ -306,7 +312,7 @@ h1, h2, h3, h4 {
   content: '';
   position: absolute;
   inset: -40%;
-  background: linear-gradient(100deg, transparent 43%, rgba(169, 225, 253, .5) 50%, transparent 57%);
+  background: linear-gradient(100deg, transparent 43%, rgba(18, 87, 201, .16) 50%, transparent 57%);
   animation: barrido 1.05s ease-in-out .15s infinite;
 }
 @keyframes barrido {

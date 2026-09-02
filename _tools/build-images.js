@@ -125,6 +125,21 @@ const POSTERS = [
   { src: 'gorra19.png', out: 'col-111' },
 ];
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOTOS DE ENTREGAS
+   ───────────────────────────────────────────────────────────────────────────
+   No hay que escribir nada aquí: se toman solas todas las fotos de la carpeta
+   "gorras" cuyo nombre empiece por "entrega" (entrega1.jpg, entrega-2.png,
+   entregaJuan.jpeg...). Se ordenan por nombre y salen en el mosaico de la
+   portada, recortadas en cuadrado.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function buscarEntregas() {
+  return fs.readdirSync(SRC)
+    .filter((f) => /^entrega/i.test(f) && /\.(png|jpe?g|webp)$/i.test(f))
+    .sort((a, b) => a.localeCompare(b, 'es', { numeric: true }))
+    .map((f, i) => ({ src: f, out: 'entrega-' + (i + 1) }));
+}
+
 /* Lado del lienzo cuadrado de todas las fotos de producto */
 const LADO = 760;
 /* Qué porcentaje del lienzo ocupa la gorra (su lado más largo).
@@ -361,6 +376,26 @@ async function procesarLogo() {
     const r = await procesarPoster(job);
     lqips[r.out] = r.lqip;
     console.log(`  ✓ ${r.out.padEnd(16)} ${r.w}x${r.h}`);
+  }
+
+  const entregas = buscarEntregas();
+  if (entregas.length) {
+    console.log(`\nProcesando ${entregas.length} fotos de entregas...`);
+    for (const job of entregas) {
+      // Recorte cuadrado centrado: son fotos de celular, de cualquier forma
+      const buf = await sharp(path.join(SRC, job.src))
+        .removeAlpha()
+        .resize({ width: LADO, height: LADO, fit: 'cover', position: 'attention', kernel: 'lanczos3' })
+        .png()
+        .toBuffer();
+      lqips[job.out] = await exportar(buf, job.out);
+      console.log(`  ✓ ${job.out.padEnd(16)} desde ${job.src}`);
+    }
+  } else {
+    console.log('\nSin fotos de entregas todavía.');
+    console.log('  Para llenar el mosaico: deja fotos en la carpeta "gorras" con');
+    console.log('  nombres que empiecen por "entrega" (entrega1.jpg, entrega2.jpg...)');
+    console.log('  y vuelve a correr este comando.');
   }
 
   console.log('\nPortada, logo e iconos...');
