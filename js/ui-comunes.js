@@ -330,6 +330,29 @@
     return ok;
   }
 
+  /* Manda el pedido al panel. Silencioso y sin bloquear: la tienda tiene que
+     seguir funcionando aunque esto falle. */
+  function anotarPedido(datos) {
+    if (typeof fetch !== 'function') return;
+    try {
+      var items = Carrito.pedibles().map(function (l) {
+        return { id: l.producto.id, cantidad: l.cantidad };
+      });
+      if (!items.length) return;
+      fetch('/api/pedido', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // keepalive: la petición sobrevive aunque el navegador cambie de
+        // pestaña al abrir WhatsApp
+        keepalive: true,
+        body: JSON.stringify({
+          cliente: datos.nombre, telefono: datos.telefono, ciudad: datos.ciudad,
+          direccion: datos.direccion, nota: datos.nota, items: items,
+        }),
+      }).catch(function () { /* sin panel la tienda funciona igual */ });
+    } catch (e) { /* idem */ }
+  }
+
   function enviarPedido(ev) {
     ev.preventDefault();
     if (Carrito.vacio()) {
@@ -357,6 +380,13 @@
     };
 
     var msg = ECM.WA.pedido(datos);
+
+    // Deja constancia del pedido para que le salga al dueño en el panel. Va a
+    // fondo perdido A PROPÓSITO: si el servidor falla, si no hay internet o si
+    // la página se abrió con file://, el cliente TIENE que poder mandar su
+    // mensaje igual. Nunca se espera a esta petición ni se le avisa de ella.
+    anotarPedido(datos);
+
     var boton = u.$('#checkout-enviar');
 
     // Bloquear 1,5 s evita que un doble toque abra dos chats

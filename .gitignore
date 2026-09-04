@@ -2,3 +2,14 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.log
+
+# La base de datos local: es de cada quien, nunca se comparte
+_datos/
+
+# Copia estática de respaldo: se regenera con node _tools/build-paginas.js
+_estatico/
+
+# Variables de entorno (no debería haber ninguna en el repo, pero por si acaso)
+.env
+.env.*
+.vercel

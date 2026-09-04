@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Entrar · EXCLUSIVE CAPS MED</title>
+<link rel="icon" href="/assets/logo/icono-192.png">
+<link rel="stylesheet" href="/admin/panel.css">
+</head>
+<body class="entrada">
+
+<main class="entrada-caja">
+  <img class="entrada-logo" src="/assets/logo/emblema-256.webp" alt="" width="72" height="72">
+  <h1>Panel de administración</h1>
+  <p class="entrada-marca">EXCLUSIVE CAPS MED</p>
+
+  <form id="forma" novalidate>
+    <label class="campo">
+      <span>Correo</span>
+      <input type="email" name="correo" autocomplete="username" required autofocus
+             placeholder="tu@correo.com" spellcheck="false">
+    </label>
+
+    <label class="campo">
+      <span>Contraseña</span>
+      <span class="campo-clave">
+        <input type="password" name="clave" autocomplete="current-password" required
+               placeholder="Tu contraseña">
+        <button type="button" class="ver-clave" id="ver" aria-label="Mostrar la contraseña">Ver</button>
+      </span>
+    </label>
+
+    <p class="aviso aviso--error" id="error" hidden role="alert"></p>
+
+    <button type="submit" class="btn btn--primario btn--ancho" id="enviar">Entrar</button>
+  </form>
+
+  <p class="entrada-pie">
+    Esta zona es privada. Si no eres el administrador,
+    <a href="/index.html">vuelve a la tienda</a>.
+  </p>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var forma = document.getElementById('forma');
+  var error = document.getElementById('error');
+  var enviar = document.getElementById('enviar');
+  var ver = document.getElementById('ver');
+  var clave = forma.elements.clave;
+
+  ver.addEventListener('click', function () {
+    var oculta = clave.type === 'password';
+    clave.type = oculta ? 'text' : 'password';
+    ver.textContent = oculta ? 'Ocultar' : 'Ver';
+    ver.setAttribute('aria-label', oculta ? 'Ocultar la contraseña' : 'Mostrar la contraseña');
+    clave.focus();
+  });
+
+  function mostrar(mensaje) {
+    error.textContent = mensaje;
+    error.hidden = false;
+  }
+
+  forma.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    error.hidden = true;
+
+    var correo = forma.elements.correo.value.trim();
+    if (!correo || !clave.value) {
+      return mostrar('Escribe tu correo y tu contraseña.');
+    }
+
+    enviar.disabled = true;
+    enviar.textContent = 'Entrando…';
+
+    fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ correo: correo, clave: clave.value }),
+    })
+      .then(function (r) { return r.json().then(function (d) { return { estado: r.status, datos: d }; }); })
+      .then(function (r) {
+        if (r.estado === 200 && r.datos.ok) {
+          location.href = '/admin';
+          return;
+        }
+        mostrar(r.datos.error || 'No fue posible entrar. Intenta nuevamente.');
+      })
+      .catch(function () {
+        mostrar('No hay conexión con el servidor. Revisa tu internet e intenta otra vez.');
+      })
+      .then(function () {
+        enviar.disabled = false;
+        enviar.textContent = 'Entrar';
+      });
+  });
+})();
+</script>
+</body>
+</html>

@@ -863,3 +863,14 @@
   .riel-productos > .card,
   .riel-productos > .card:last-child:nth-child(odd) { width: 252px; max-width: none; }
 }
+
+/* ── Alto reservado mientras carga ─────────────────────────────────────────
+   El catálogo lo pinta el JavaScript con los datos de la tienda. Hasta que
+   llegan, la retícula está vacía y el pie de página se dibuja arriba del todo;
+   al llenarse, todo saltaba de golpe (un CLS de 0,56 medido). Reservando alto
+   mientras está vacía, el pie nace ya fuera de pantalla y no hay salto.
+   Al filtrar y quedar un solo resultado, la retícula vuelve a medir lo suyo.
+   La retícula lleva dentro un <noscript>, así que :empty nunca casa: hay que
+   preguntar por las tarjetas. En navegadores sin :has() simplemente no se
+   reserva, que es como estaba antes.                                      */
+.rejilla:not(:has(> .card)) { min-height: 150svh; }

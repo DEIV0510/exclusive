@@ -25,8 +25,13 @@
     else if (p.nuevo) insignias.push('<span class="insignia insignia--nuevo">Nuevo</span>');
     else if (p.destacado) insignias.push('<span class="insignia insignia--destacado">Destacado</span>');
 
-    var alt = p.nombre + ' — gorra ' + p.tipo.toLowerCase() + ' ' + p.marca +
-              ' color ' + (p.colores || []).join(' y ').toLowerCase();
+    // Con lo que haya: un producto sin tipo o sin marca no puede tumbar la lista
+    var trozos = [p.nombre + ' — gorra'];
+    if (p.tipo) trozos.push(String(p.tipo).toLowerCase());
+    if (p.marca) trozos.push(String(p.marca));
+    var suColores = (p.colores || []).join(' y ').toLowerCase();
+    if (suColores) trozos.push('color ' + suColores);
+    var alt = trozos.join(' ');
 
     // La segunda foto solo existe donde hay cursor de verdad: en táctil nunca
     // llega a mostrarse (el efecto es :hover) y sin esto se descargaba igual.

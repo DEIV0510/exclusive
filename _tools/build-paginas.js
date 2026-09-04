@@ -19,13 +19,16 @@ const vm = require('vm');
 const RAIZ = path.join(__dirname, '..');
 const PLANTILLA = path.join(__dirname, 'plantilla');
 
-/* ── Cargar config.js y productos.js sin navegador ─────────────────────── */
+/* ── Cargar la semilla sin navegador ───────────────────────────────────────
+   OJO: esto YA NO es la fuente de datos de la tienda. Desde que existe el
+   panel, la tienda lee de la base; estos archivos solo sirven para sembrarla
+   la primera vez y para poder sacar una copia estática de respaldo. */
 function cargarDatos() {
   const sandbox = { window: {}, console };
   sandbox.window.ECM = {};
   vm.createContext(sandbox);
   ['config.js', 'productos.js'].forEach((f) => {
-    const codigo = fs.readFileSync(path.join(RAIZ, 'js', f), 'utf8');
+    const codigo = fs.readFileSync(path.join(RAIZ, '_tools', 'semilla', f), 'utf8');
     vm.runInContext(codigo, sandbox, { filename: f });
   });
   return {
@@ -35,7 +38,18 @@ function cargarDatos() {
   };
 }
 
-const { CONFIG, PRODUCTOS, COLECCIONES } = cargarDatos();
+/* ── Fábrica de páginas ───────────────────────────────────────────────────
+   Recibe los datos y devuelve los constructores. La misma función se usa
+   desde la consola (para generar el sitio estático) y desde el servidor
+   (para armar cada página con lo que haya guardado el panel), así que no
+   hay dos versiones del mismo HTML que se puedan desincronizar.         */
+function crearRenderizador(datos) {
+const CONFIG = datos.CONFIG;
+const PRODUCTOS = datos.PRODUCTOS || [];
+const COLECCIONES = datos.COLECCIONES || [];
+// Las fotos de entrega llegan como lista. En la consola se leen del disco;
+// en producción las manda el servidor, porque allí no se puede listar.
+const ENTREGAS = datos.entregas || null;
 const BASE = String(CONFIG.sitio.url).replace(/\/+$/, '');
 
 /* ── Utilidades ────────────────────────────────────────────────────────── */
@@ -43,6 +57,14 @@ const leer = (f) => fs.readFileSync(path.join(PLANTILLA, f), 'utf8');
 const esc = (t) => String(t == null ? '' : t)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+/* JSON dentro de un <script>: JSON.stringify escapa las comillas pero NO el
+   "</script>". Sin esto, un nombre de producto con "</script><img onerror=…>"
+   cierra el bloque y ejecuta HTML en la tienda. Los separadores de línea de
+   Unicode también rompen el análisis en algunos navegadores. */
+const jsonSeguro = (x) => JSON.stringify(x, null, 2)
+  .replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026')
+  .replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 
 const abs = (rel) => BASE + '/' + String(rel).replace(/^\/+/, '');
 const urlProducto = (p) => `gorra-${p.slug}.html`;
@@ -56,6 +78,7 @@ const precioTexto = (v) => pesos.format(v).replace(/ /g, ' ');
 // Corta por la última palabra completa: una meta description partida a mitad
 // de palabra se ve mal en el resultado de búsqueda y en la vista previa.
 function recortar(texto, max) {
+  if (texto == null) texto = '';
   const t = String(texto).trim();
   if (t.length <= max) return t;
   const corte = t.slice(0, max - 1);
@@ -63,10 +86,17 @@ function recortar(texto, max) {
   return (espacio > max * 0.6 ? corte.slice(0, espacio) : corte).replace(/[,;:.\s]+$/, '') + '…';
 }
 
+/* Arma el texto alternativo con lo que haya. Un producto puede quedarse sin
+   tipo, sin marca o sin colores, y una página pública no puede reventar por
+   eso: se saltan los trozos que falten. */
 function altDe(p, i) {
-  const colores = (p.colores || []).join(' y ').toLowerCase();
   const vistas = ['vista frontal', 'vista lateral', 'interior'];
-  return `${p.nombre} — gorra ${p.tipo.toLowerCase()} ${p.marca} color ${colores}, ${vistas[i] || 'detalle'}`;
+  const trozos = [p.nombre + ' — gorra'];
+  if (p.tipo) trozos.push(String(p.tipo).toLowerCase());
+  if (p.marca) trozos.push(String(p.marca));
+  const colores = (p.colores || []).join(' y ').toLowerCase();
+  if (colores) trozos.push('color ' + colores);
+  return trozos.join(' ') + ', ' + (vistas[i] || 'detalle');
 }
 
 /* ── <head> ──────────────────────────────────────────────────────────────
@@ -118,7 +148,7 @@ ${precargarImagen || ''}
 <link rel="stylesheet" href="css/paginas.css">
 
 <script type="application/ld+json">
-${JSON.stringify(jsonld, null, 2)}
+${jsonSeguro(jsonld)}
 </script>`;
 }
 
@@ -136,6 +166,7 @@ const ORG = {
     width: 512, height: 512,
   },
   image: abs('assets/logo/og-image.jpg'),
+  ...(CONFIG.correo ? { email: CONFIG.correo } : {}),
   // Le dice a Google que estos perfiles son de la misma tienda
   sameAs: [CONFIG.instagram.url, CONFIG.tiktok && CONFIG.tiktok.url].filter(Boolean),
   address: {
@@ -272,7 +303,19 @@ function documento({ head, pagina, cuerpo, atributosBody = '', scripts }) {
   const header = leer('header.html')
     .replace('{{NAV_HOME}}', pagina === 'home' ? ' aria-current="page"' : '')
     .replace('{{NAV_CATALOGO}}', pagina === 'catalogo' ? ' aria-current="page"' : '');
+  // La fila del correo se escribe aquí, no con JavaScript: si se pintara
+  // después de cargar, el pie daría un salto (mal CLS).
+  const correo = CONFIG.correo
+    ? `          <li>
+            <a href="mailto:${esc(CONFIG.correo)}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-correo"></use></svg>
+              <span>${esc(CONFIG.correo)}</span>
+            </a>
+          </li>
+`
+    : '';
   const pie = leer('pie.html')
+    .replace('{{CORREO}}', correo)
     .replace('{{BARRA_HOME}}', pagina === 'home' ? ' aria-current="page"' : '')
     .replace('{{BARRA_CATALOGO}}', pagina === 'catalogo' ? ' aria-current="page"' : '');
 
@@ -294,10 +337,16 @@ ${scripts}
 `;
 }
 
-const SCRIPTS_BASE = [
-  'js/config.js', 'js/productos.js', 'js/lqip.js', 'js/nucleo.js',
+/* Cuando la tienda corre con el panel, los datos llegan en un solo archivo
+   (js/datos.js) que arma el servidor con lo que hay en la base. Sin panel se
+   siguen usando los dos archivos escritos a mano. */
+const SCRIPTS_BASE = (datos.archivoDeDatos
+  ? [datos.archivoDeDatos]
+  : ['js/config.js', 'js/productos.js']
+).concat([
+  'js/lqip.js', 'js/nucleo.js',
   'js/carrito.js', 'js/whatsapp.js', 'js/ui-comunes.js', 'js/ui-catalogo.js',
-];
+]);
 
 function scripts(extra) {
   return SCRIPTS_BASE.concat(extra || []).concat(['js/main.js'])
@@ -389,6 +438,7 @@ function diapositivas() {
    ninguna, la sección se queda con el título y el botón de Instagram — no se
    inventa un mosaico de relleno.                                          */
 function fotosDeEntrega() {
+  if (ENTREGAS) return ENTREGAS;
   return fs.readdirSync(path.join(RAIZ, 'assets', 'img'))
     .filter((f) => /^entrega-\d+-400\.webp$/.test(f))
     .map((f) => f.replace('-400.webp', ''))
@@ -691,36 +741,72 @@ function construirManifest() {
   }, null, 2) + '\n';
 }
 
-/* ── Ejecutar ──────────────────────────────────────────────────────────── */
+  return {
+    construirHome, construirCatalogo, construirProducto, construir404,
+    construirSitemap, construirRobots, construirManifest,
+    urlProducto, PRODUCTOS, CONFIG,
+  };
+}
+
+/* ── Ejecutar desde la consola ─────────────────────────────────────────── */
+/* La copia estática va a _estatico/, NO a la raíz. En Vercel un archivo suelto
+   en la raíz le gana a las reglas de reescritura, así que un index.html viejo
+   taparía lo que arma el servidor con los datos del panel. */
+const SALIDA = path.join(RAIZ, '_estatico');
 function escribir(nombre, contenido) {
-  fs.writeFileSync(path.join(RAIZ, nombre), contenido, 'utf8');
+  if (!fs.existsSync(SALIDA)) fs.mkdirSync(SALIDA, { recursive: true });
+  fs.writeFileSync(path.join(SALIDA, nombre), contenido, 'utf8');
   console.log('  ✓', nombre);
 }
 
-console.log(`\nGenerando ${CONFIG.marca} (${PRODUCTOS.length} productos)\n`);
+if (require.main === module) {
+  const datos = cargarDatos();
+  // La copia estática se sirve con su propio js/datos.js, no con los dos
+  // archivos de la semilla: si no, apunta a rutas que ya no existen.
+  datos.archivoDeDatos = 'js/datos.js';
+  const { CONFIG, PRODUCTOS } = datos;
+  const R = crearRenderizador(datos);
+  const { construirHome, construirCatalogo, construirProducto, construir404,
+          construirSitemap, construirRobots, construirManifest, urlProducto } = R;
+  const tienePrecio = (p) => typeof p.precio === 'number' && isFinite(p.precio) && p.precio > 0;
+  console.log(`\nGenerando ${CONFIG.marca} (${PRODUCTOS.length} productos)\n`);
 
-// Borra fichas de productos que ya no existen
-fs.readdirSync(RAIZ)
-  .filter((f) => /^gorra-.*\.html$/.test(f))
-  .forEach((f) => {
-    if (!PRODUCTOS.some((p) => urlProducto(p) === f)) {
-      fs.unlinkSync(path.join(RAIZ, f));
-      console.log('  −', f, '(el producto ya no está en el catálogo)');
-    }
-  });
+  // Borra fichas de productos que ya no existen
+  (fs.existsSync(SALIDA) ? fs.readdirSync(SALIDA) : [])
+    .filter((f) => /^gorra-.*\.html$/.test(f))
+    .forEach((f) => {
+      if (!PRODUCTOS.some((p) => urlProducto(p) === f)) {
+        fs.unlinkSync(path.join(SALIDA, f));
+        console.log('  −', f, '(el producto ya no está en el catálogo)');
+      }
+    });
 
-escribir('index.html', construirHome());
-escribir('catalogo.html', construirCatalogo());
-PRODUCTOS.forEach((p) => escribir(urlProducto(p), construirProducto(p)));
-escribir('404.html', construir404());
-escribir('sitemap.xml', construirSitemap());
-escribir('robots.txt', construirRobots());
-escribir('site.webmanifest', construirManifest());
+  escribir('index.html', construirHome());
+  escribir('catalogo.html', construirCatalogo());
+  PRODUCTOS.forEach((p) => escribir(urlProducto(p), construirProducto(p)));
+  escribir('404.html', construir404());
+  escribir('sitemap.xml', construirSitemap());
+  escribir('robots.txt', construirRobots());
+  escribir('site.webmanifest', construirManifest());
 
-const sinPrecio = PRODUCTOS.filter((p) => !tienePrecio(p));
-if (sinPrecio.length) {
-  console.log(`\n  Aviso: ${sinPrecio.length} de ${PRODUCTOS.length} productos no tienen precio.`);
-  console.log('  La tienda muestra "Precio por WhatsApp" y no declara Offer en el schema.');
-  console.log('  Cárgalos en js/productos.js y vuelve a correr este comando.');
+  // El paquete de datos, con la misma forma que sirve el servidor
+  fs.mkdirSync(path.join(SALIDA, 'js'), { recursive: true });
+  fs.writeFileSync(path.join(SALIDA, 'js', 'datos.js'),
+    ['/* Copia estática. Los datos de verdad viven en la base; esto es un respaldo. */',
+     'window.ECM = window.ECM || {};',
+     'window.ECM.CONFIG = ' + JSON.stringify(CONFIG, null, 2) + ';',
+     'window.ECM.PRODUCTOS = ' + JSON.stringify(PRODUCTOS, null, 2) + ';',
+     'window.ECM.COLECCIONES = ' + JSON.stringify(datos.COLECCIONES || [], null, 2) + ';',
+     ''].join('\n'), 'utf8');
+  console.log('  ✓ js/datos.js');
+
+  const sinPrecio = PRODUCTOS.filter((p) => !tienePrecio(p));
+  if (sinPrecio.length) {
+    console.log(`\n  Aviso: ${sinPrecio.length} de ${PRODUCTOS.length} productos no tienen precio.`);
+    console.log('  La tienda muestra "Precio por WhatsApp" y no declara Offer en el schema.');
+    console.log('  Cárgalos en js/productos.js y vuelve a correr este comando.');
+  }
+  console.log('\nListo.\n');
 }
-console.log('\nListo.\n');
+
+module.exports = { crearRenderizador, cargarDatos };

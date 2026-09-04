@@ -31,6 +31,9 @@ window.ECM.CONFIG = {
     visible: '322 254 4571',
   },
 
+  /* Correo de contacto. Déjalo en null si no quieres publicarlo. */
+  correo: 'exclusivecapssas@gmail.com',
+
   /* ── 3. REDES ─────────────────────────────────────────────────────────── */
   instagram: {
     usuario: 'exclusive_caps_med',

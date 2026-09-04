@@ -1,0 +1,5 @@
+# Lo que no tiene por qué subir a producción
+_datos/
+_estatico/
+node_modules/
+.git/
