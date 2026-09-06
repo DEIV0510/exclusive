@@ -13,3 +13,5 @@ _estatico/
 .env
 .env.*
 .vercel
+
+.vercel

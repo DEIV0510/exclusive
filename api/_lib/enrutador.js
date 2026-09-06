@@ -7,7 +7,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 'use strict';
 
-const { ok, fallo, fallaronLasCosas, cuerpoJson, leerCrudo, cabecerasSeguras, exigirMismoOrigen } = require('./http');
+const { ok, fallo, json, fallaronLasCosas, cuerpoJson, leerCrudo, cabecerasSeguras, exigirMismoOrigen } = require('./http');
 const A = require('./rutas-admin');
 const C = require('./contenido');
 const V = require('./validar');
@@ -56,7 +56,7 @@ async function despachar(req, res, rutaCruda) {
 
     /* ── Público ─────────────────────────────────────────────────────────── */
     if (metodo === 'POST' && m('pedido')) return registrarPedido(req, res);
-    if (metodo === 'GET' && m('estado')) return ok(res, { servicio: 'ecm', hora: ahora() });
+    if (metodo === 'GET' && m('estado')) return await estado(req, res);
 
     /* ── Panel ───────────────────────────────────────────────────────────── */
     if (partes[0] !== 'admin') return fallo(res, 404, 'Esa dirección no existe.');
@@ -121,6 +121,45 @@ async function despachar(req, res, rutaCruda) {
 
     return fallo(res, 404, 'Esa dirección no existe.');
   }
+}
+
+/* ── Estado del servicio ────────────────────────────────────────────────────
+   Para saber de un vistazo qué falta por configurar al publicar. NO enseña
+   ninguna clave: solo dice si cada pieza está puesta y si responde. */
+async function estado(req, res) {
+  const { enVercel } = require('./db');
+  const hayBase = !!process.env.TURSO_URL || !enVercel();
+  const hayFotos = !!process.env.BLOB_READ_WRITE_TOKEN;
+
+  let base = 'sin configurar';
+  let productos = null;
+  if (hayBase) {
+    try {
+      const f = await uno('SELECT COUNT(*) AS n FROM productos');
+      productos = Number(f.n);
+      base = 'conectada';
+    } catch (e) {
+      base = 'no responde';
+    }
+  }
+
+  const falta = [];
+  if (!hayBase) falta.push('Falta la base de datos. Corre: vercel integration add turso');
+  if (base === 'no responde') falta.push('La base está configurada pero no responde. Revisa TURSO_URL y TURSO_TOKEN.');
+  if (!hayFotos && enVercel()) {
+    falta.push('Falta el almacén de fotos (Vercel Blob). La tienda funciona, pero no se pueden subir fotos nuevas desde el panel.');
+  }
+
+  return json(res, base === 'conectada' ? 200 : 503, {
+    ok: base === 'conectada',
+    servicio: 'EXCLUSIVE CAPS MED',
+    donde: enVercel() ? 'Vercel' : 'tu computador',
+    base,
+    productos,
+    subirFotos: hayFotos || !enVercel() ? 'sí' : 'no',
+    falta,
+    hora: ahora(),
+  });
 }
 
 /* ── Subir una foto ──────────────────────────────────────────────────────── */

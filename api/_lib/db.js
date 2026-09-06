@@ -21,9 +21,24 @@ const RAIZ = path.join(__dirname, '..', '..');
 let cliente = null;
 let esquemaListo = false;
 
+/* ¿Estamos en Vercel? Allí el disco es de solo lectura, así que la base TIENE
+   que ser Turso: no hay dónde crear un archivo. */
+const enVercel = () => process.env.VERCEL === '1' || !!process.env.VERCEL_ENV;
+
 function url() {
   if (process.env.TURSO_URL) return process.env.TURSO_URL;
-  // Local: el archivo vive fuera de assets para que nunca se sirva por web
+
+  if (enVercel()) {
+    // Sin esto el fallo era un "ENOENT" que no le dice nada a nadie
+    throw new Error(
+      'Falta configurar la base de datos: no está la variable TURSO_URL. ' +
+      'En Vercel el disco es de solo lectura, así que hace falta Turso. ' +
+      'Corre "vercel integration add turso" y vuelve a publicar. ' +
+      'Puedes comprobar el estado en /api/estado. Ver LEEME.md, punto 11.'
+    );
+  }
+
+  // En el computador: un archivo, fuera de assets para que nunca se sirva
   const dir = path.join(RAIZ, '_datos');
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   return 'file:' + path.join(dir, 'tienda.db').replace(/\\/g, '/');
@@ -211,4 +226,4 @@ async function lote(sentencias) {
 
 const ahora = () => new Date().toISOString();
 
-module.exports = { db, prepararEsquema, todos, uno, correr, lote, ahora, RAIZ };
+module.exports = { db, prepararEsquema, todos, uno, correr, lote, ahora, RAIZ, enVercel };

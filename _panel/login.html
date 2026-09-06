@@ -93,6 +93,14 @@
         mostrar('No hay conexión con el servidor. Revisa tu internet e intenta otra vez.');
       })
       .then(function () {
+        // Si el ingreso falla, se mira si el problema es de configuración:
+        // así el dueño no se queda pensando que olvidó su contraseña.
+        if (error.hidden) return;
+        return fetch('/api/estado').then(function (r) { return r.json(); }).then(function (e) {
+          if (e && e.falta && e.falta.length) mostrar(e.falta[0]);
+        }).catch(function () {});
+      })
+      .then(function () {
         enviar.disabled = false;
         enviar.textContent = 'Entrar';
       });

@@ -325,6 +325,34 @@ solo a la que imprime Vercel) y confirma que se ve lo nuevo.
 
 ---
 
+### Si la tienda dice «Volvemos enseguida»
+
+Eso significa que el sitio está publicado pero algo del servidor falla. Para
+saber qué, abre:
+
+```
+tudominio.com/api/estado
+```
+
+Te contesta en texto claro qué está puesto y qué falta. Por ejemplo:
+
+```json
+{
+  "base": "sin configurar",
+  "subirFotos": "no",
+  "falta": [
+    "Falta la base de datos. Corre: vercel integration add turso"
+  ]
+}
+```
+
+Lo más común al publicar por primera vez es justo eso: la tienda subió, pero
+todavía no tiene base de datos. Haz el paso 1 y vuelve a publicar.
+
+Esa dirección no enseña ninguna clave: solo dice si cada pieza está puesta.
+
+---
+
 ## 12. Cómo está armado (para quien toque el código)
 
 La tienda **no cambió**: sigue siendo HTML, CSS y JavaScript sin librerías, y
