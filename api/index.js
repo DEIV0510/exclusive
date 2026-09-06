@@ -81,7 +81,11 @@ function paginaDeCaida(res) {
    una lectura calculada al vuelo no se incluye en el despliegue. */
 const fs = require('fs');
 const path = require('path');
-const PANEL = path.join(__dirname, '..', 'admin');
+/* Los dos HTML del panel viven FUERA de admin/ a propósito: cualquier cosa
+   dentro de admin/ la sirve Vercel como archivo estático, y eso se saltaría la
+   comprobación de sesión. El CSS y el JS sí pueden quedarse ahí: no llevan
+   ningún dato, y sin sesión la API no les contesta nada. */
+const PANEL = path.join(__dirname, '..', '_panel');
 
 function enviarArchivoDelPanel(res, nombre) {
   const p = nombre === 'login.html'

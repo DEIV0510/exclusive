@@ -202,20 +202,69 @@ async function editarProducto(req, res, id) {
   const existe = await uno('SELECT id FROM productos WHERE id = ?', [Number(id)]);
   if (!existe) return fallo(res, 404, 'Ese producto ya no existe.');
 
-  const datos = await cuerpoJson(req);
+  const enviado = await cuerpoJson(req);
+
+  // Se valida el producto ENTERO: lo que ya hay en la base, con encima lo que
+  // manda la petición. Así un guardado parcial no falla pidiendo campos que
+  // no se están cambiando, y las validaciones cruzadas (como que el precio
+  // anterior sea mayor que el actual) siguen mirando la foto completa.
+  const actual = await C.productoParaPanel(Number(id));
+  // Por si lo borraron entre la comprobación y esta línea: mejor un aviso
+  // claro que un error técnico.
+  if (!actual) return fallo(res, 404, 'Ese producto ya no existe.');
+  const datos = {
+    nombre: actual.nombre, slug: actual.slug, marca: actual.marca, tipo: actual.tipo,
+    modelo: actual.modelo, sku: actual.sku, precio: actual.precio,
+    precioAntes: actual.precioAntes, estado: actual.estado, stock: actual.stock,
+    destacado: actual.destacado, nuevo: actual.nuevo, exclusivo: actual.exclusivo,
+    colores: actual.colores, talla: actual.talla, descripcion: actual.descripcion,
+    caracteristicas: actual.caracteristicas,
+    ...enviado,
+  };
   const c = await leerCamposProducto(datos, id);
-  await correr(
-    `UPDATE productos SET slug=?, nombre=?, marca=?, tipo=?, modelo=?, sku=?, precio=?,
-       precio_antes=?, estado=?, stock=?, destacado=?, nuevo=?, exclusivo=?, colores=?,
-       talla=?, descripcion=?, caracteristicas=?, actualizado=? WHERE id=?`,
-    [c.slug, c.nombre, c.marca, c.tipo, c.modelo, c.sku, c.precio, c.precio_antes,
-      c.estado, c.stock, c.destacado, c.nuevo, c.exclusivo, c.colores, c.talla,
-      c.descripcion, c.caracteristicas, ahora(), Number(id)]
-  );
+
+  // Solo se escribe lo que venga en la petición. Antes, un guardado que no
+  // mandara "descripcion" o "colores" los dejaba vacíos sin avisar, y el dueño
+  // perdía el texto de la ficha sin enterarse. El panel manda todos los
+  // campos, pero la protección tiene que estar aquí, no en la pantalla.
+  const columnas = {
+    nombre: ['nombre', c.nombre],
+    slug: ['slug', c.slug],
+    marca: ['marca', c.marca],
+    tipo: ['tipo', c.tipo],
+    modelo: ['modelo', c.modelo],
+    sku: ['sku', c.sku],
+    precio: ['precio', c.precio],
+    precioAntes: ['precio_antes', c.precio_antes],
+    estado: ['estado', c.estado],
+    stock: ['stock', c.stock],
+    destacado: ['destacado', c.destacado],
+    nuevo: ['nuevo', c.nuevo],
+    exclusivo: ['exclusivo', c.exclusivo],
+    colores: ['colores', c.colores],
+    talla: ['talla', c.talla],
+    descripcion: ['descripcion', c.descripcion],
+    caracteristicas: ['caracteristicas', c.caracteristicas],
+  };
+
+  const sets = [];
+  const valores = [];
+  Object.entries(columnas).forEach(([campo, [columna, valor]]) => {
+    // El nombre y el slug van siempre: el slug se recalcula con el nombre
+    const siempre = campo === 'nombre' || campo === 'slug';
+    if (siempre || Object.prototype.hasOwnProperty.call(enviado, campo)) {
+      sets.push(columna + ' = ?');
+      valores.push(valor);
+    }
+  });
+  sets.push('actualizado = ?');
+  valores.push(ahora(), Number(id));
+
+  await correr(`UPDATE productos SET ${sets.join(', ')} WHERE id = ?`, valores);
 
   // Las fotos solo se tocan si el formulario las mandó: así una edición
   // rápida de precio nunca puede borrar la galería sin querer.
-  if (Array.isArray(datos.fotos)) await asignarFotos(Number(id), datos.fotos);
+  if (Array.isArray(enviado.fotos)) await asignarFotos(Number(id), enviado.fotos);
 
   return ok(res, { producto: await C.productoParaPanel(Number(id)), mensaje: 'Cambios guardados correctamente.' });
 }
@@ -403,6 +452,16 @@ const tipos = haceTaxonomia('tipos', 'una categoría', 'imagen');
 
 /* Cada bloque se valida con su propia forma: si se guardara tal cual lo que
    llega, el panel podría dejar la home rota. */
+/* Antes se recortaba en silencio: el dueño guardaba ocho pasos, se quedaban
+   cinco y el panel le decía "guardado correctamente". Mejor decírselo. */
+function tope(lista, max, que) {
+  const arr = Array.isArray(lista) ? lista : [];
+  if (arr.length > max) {
+    throw new V.ErrorDeDatos(`Como máximo puedes tener ${max} ${que}. Quita ${arr.length - max} y vuelve a guardar.`);
+  }
+  return arr;
+}
+
 const FORMAS = {
   identidad: (d) => ({
     marca: V.textoObligatorio(d.marca, 'El nombre del negocio', { max: 60 }),
@@ -453,13 +512,14 @@ const FORMAS = {
     });
     return salida;
   },
-  carrusel: (d) => (Array.isArray(d) ? d : []).slice(0, 8).map((s, i) => {
+  carrusel: (d) => tope(d, 8, 'diapositivas').map((s, i) => {
     const dia = {
       titulo: V.textoObligatorio(s.titulo, `El título de la diapositiva ${i + 1}`, { max: 60 }),
       cta: V.texto(s.cta, { max: 30 }) || 'Comprar ahora',
     };
     if (s.imagen) {
-      dia.imagen = V.texto(s.imagen, { max: 200 });
+      // Con esto se arma un src=: nada de rutas ni comillas
+      dia.imagen = V.nombreDeFoto(s.imagen, 'La foto de la diapositiva');
       dia.posicion = V.texto(s.posicion, { max: 20 }) || '50% 42%';
       dia.difuminado = Math.min(12, Math.max(0, Number(s.difuminado) || 0));
       dia.enlace = V.url(s.enlace || 'catalogo.html', { campo: 'El enlace del botón' });
@@ -471,16 +531,16 @@ const FORMAS = {
     return dia;
   }),
   carruselSegundos: (d) => Math.min(30, Math.max(0, Number(d) || 0)),
-  confianza: (d) => (Array.isArray(d) ? d : []).slice(0, 6).map((b) => ({
+  confianza: (d) => tope(d, 6, 'bloques de confianza').map((b) => ({
     icono: V.unoDe(b.icono || 'carrito', ['carrito', 'chat', 'estrella', 'gorra'], 'El icono'),
     titulo: V.textoObligatorio(b.titulo, 'El título del bloque', { max: 40 }),
     texto: V.texto(b.texto, { max: 140 }),
   })),
-  pasos: (d) => (Array.isArray(d) ? d : []).slice(0, 5).map((p) => ({
+  pasos: (d) => tope(d, 5, 'pasos').map((p) => ({
     titulo: V.textoObligatorio(p.titulo, 'El título del paso', { max: 40 }),
     texto: V.texto(p.texto, { max: 160 }),
   })),
-  faq: (d) => (Array.isArray(d) ? d : []).slice(0, 15).map((f) => ({
+  faq: (d) => tope(d, 15, 'preguntas').map((f) => ({
     p: V.textoObligatorio(f.p, 'La pregunta', { max: 140 }),
     r: V.parrafo(f.r, { max: 700 }),
   })),
@@ -600,15 +660,14 @@ async function editarUsuario(req, res, id) {
   const yo = await auth.usuarioActual(req);
   if (!yo) throw new auth.ErrorDeAcceso(401, 'Tu sesión se cerró. Vuelve a entrar.');
   const d = await cuerpoJson(req);
-  const objetivo = await uno('SELECT * FROM usuarios WHERE id = ?', [Number(id)]);
-  if (!objetivo) return fallo(res, 404, 'Ese usuario ya no existe.');
-
-  // Cualquiera puede cambiar SU propia contraseña y su nombre.
-  // Tocar a otro, o cambiar roles, es cosa del administrador.
-  const esYoMismo = objetivo.id === yo.id;
+  // El permiso se mira ANTES de tocar la base: si no, la respuesta cambia
+  // según el usuario exista o no y cualquiera podría ir averiguando cuáles hay.
+  const esYoMismo = Number(id) === yo.id;
   if (!esYoMismo && !auth.puede(yo, 'usuarios')) {
     return fallo(res, 403, 'Solo un administrador puede editar a otros usuarios.');
   }
+  const objetivo = await uno('SELECT * FROM usuarios WHERE id = ?', [Number(id)]);
+  if (!objetivo) return fallo(res, 404, 'Ese usuario ya no existe.');
 
   const cambios = [];
   const args = [];
@@ -658,6 +717,13 @@ async function esElUltimoAdmin(id) {
   return Number(f.n) === 0;
 }
 
+/* Comprobar y luego escribir deja un hueco: con dos peticiones a la vez, las
+   dos ven que "queda otro admin" y las dos se borran. Esta comprobación va
+   DENTRO del propio UPDATE/DELETE, así que la base no puede dejar la tienda
+   sin ningún administrador ni aunque lleguen mil peticiones juntas. */
+const CONDICION_QUEDA_ADMIN =
+  " AND EXISTS (SELECT 1 FROM usuarios o WHERE o.rol = 'admin' AND o.activo = 1 AND o.id <> usuarios.id)";
+
 async function borrarUsuario(req, res, id) {
   const yo = await auth.exigir(req, 'usuarios');
   if (Number(id) === yo.id) return fallo(res, 409, 'No puedes eliminar tu propio usuario.');
@@ -666,8 +732,14 @@ async function borrarUsuario(req, res, id) {
   if (objetivo.rol === 'admin' && await esElUltimoAdmin(objetivo.id)) {
     return fallo(res, 409, 'No puedes eliminar al único administrador que queda.');
   }
+  const borrado = await correr(
+    'DELETE FROM usuarios WHERE id = ?' + (objetivo.rol === 'admin' ? CONDICION_QUEDA_ADMIN : ''),
+    [Number(id)]
+  );
+  if (!borrado.rowsAffected) {
+    return fallo(res, 409, 'No puedes eliminar al único administrador que queda.');
+  }
   await correr('DELETE FROM sesiones WHERE usuario_id = ?', [Number(id)]);
-  await correr('DELETE FROM usuarios WHERE id = ?', [Number(id)]);
   console.log(`[panel] ${yo.correo} eliminó al usuario ${objetivo.correo}`);
   return ok(res, { mensaje: 'Usuario eliminado.' });
 }

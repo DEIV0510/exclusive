@@ -867,3 +867,33 @@ body[data-pagina='producto'] { padding-bottom: calc(var(--h-barra) + 62px + env(
 @media (min-width: 700px) {
   .mosaico { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--e3); }
 }
+
+
+/* ── Banners de promoción ──────────────────────────────────────────────────
+   Los crea el dueño desde el panel. Solo se pintan los activos, así que esta
+   zona puede no existir: nada aquí puede dar por hecho que hay contenido.  */
+.promos { display: grid; gap: var(--e3); }
+@media (min-width: 760px) { .promos { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); } }
+
+.promo {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  padding: var(--e3);
+  border: 1px solid var(--linea);
+  border-radius: var(--r);
+  background: var(--navy-800);
+  box-shadow: var(--sombra);
+}
+.promo picture { flex: none; }
+.promo img {
+  width: 88px;
+  height: 88px;
+  border-radius: var(--r-sm);
+  object-fit: cover;
+  display: block;
+  background: var(--navy-700);
+}
+.promo-txt { min-width: 0; }
+.promo-txt b { display: block; font-family: var(--f-display); font-size: 16px; margin-bottom: 3px; }
+.promo-txt p { color: var(--tx-2); font-size: 13.5px; margin: 0 0 10px; }

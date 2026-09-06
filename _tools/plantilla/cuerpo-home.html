@@ -13,12 +13,15 @@
       <button type="button" class="carrusel-flecha" data-ir="-1" aria-label="Diapositiva anterior">
         <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
       </button>
-      <div class="carrusel-puntos" id="carrusel-puntos" role="tablist" aria-label="Elegir diapositiva"></div>
+      <div class="carrusel-puntos" id="carrusel-puntos" role="tablist" aria-label="Elegir diapositiva"{{PUNTOS_ANCHO}}></div>
       <button type="button" class="carrusel-flecha" data-ir="1" aria-label="Diapositiva siguiente">
         <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"></use></svg>
       </button>
     </div>
   </section>
+
+  <!-- ══ PROMOCIONES (solo si el dueño creó alguna) ══ -->
+  {{BANNERS}}
 
   <!-- ══ DISPONIBLES ══ -->
   <section class="seccion seccion--ceñida" id="disponibles">

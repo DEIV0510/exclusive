@@ -293,6 +293,14 @@ vercel deploy --prod --yes
 
 **4. Crear tu usuario en producción.** Con las variables de Turso a mano:
 
+En PowerShell (que es la consola de Windows):
+
+```
+$env:TURSO_URL="..."; $env:TURSO_TOKEN="..."; node _tools/sembrar.js --admin tu@correo.com
+```
+
+En Mac o Linux:
+
 ```
 TURSO_URL=... TURSO_TOKEN=... node _tools/sembrar.js --admin tu@correo.com
 ```

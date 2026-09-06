@@ -31,20 +31,22 @@
     u.$$('[data-wa-tel]').forEach(function (a) {
       a.href = 'tel:+' + CONFIG.whatsapp.numero;
     });
-    u.$$('[data-ig]').forEach(function (a) { a.href = CONFIG.instagram.url; });
-    u.$$('[data-ig-usuario]').forEach(function (el) {
-      el.textContent = '@' + CONFIG.instagram.usuario;
-    });
-    // TikTok es opcional: si algún día se borra el bloque de config.js, el
-    // enlace se quita entero (y su fila del pie) en vez de quedar en "#".
-    var tt = CONFIG.tiktok;
-    u.$$('[data-tt]').forEach(function (a) {
-      if (tt && tt.url) { a.href = tt.url; return; }
-      var fuera = a.closest('li') || a;
-      fuera.remove();
-    });
-    u.$$('[data-tt-usuario]').forEach(function (el) {
-      if (tt && tt.usuario) el.textContent = '@' + tt.usuario;
+    // TODAS las redes son opcionales. Si una está apagada o sin enlace, se
+    // quita del documento (y con ella su fila del pie) en vez de dejar un
+    // botón que no lleva a ninguna parte. Ninguna puede darse por segura:
+    // apagar Instagram desde el panel no puede tumbar la tienda.
+    [['ig', 'instagram'], ['tt', 'tiktok'], ['fb', 'facebook']].forEach(function (par) {
+      var marca = par[0];
+      var red = CONFIG[par[1]];
+      u.$$('[data-' + marca + ']').forEach(function (a) {
+        if (red && red.url) { a.href = red.url; return; }
+        var fuera = a.closest('li') || a;
+        fuera.remove();
+      });
+      u.$$('[data-' + marca + '-usuario]').forEach(function (el) {
+        if (red && red.usuario) el.textContent = '@' + red.usuario;
+        else { var fuera = el.closest('li') || el; fuera.remove(); }
+      });
     });
     u.$$('[data-marca]').forEach(function (el) { el.textContent = CONFIG.marca; });
     u.$$('[data-ciudad]').forEach(function (el) {

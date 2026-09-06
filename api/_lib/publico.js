@@ -34,6 +34,7 @@ async function datosParaRender() {
     CONFIG: paquete.config,
     PRODUCTOS: paquete.productos,
     COLECCIONES: paquete.colecciones,
+    BANNERS: paquete.banners || [],
     entregas: await fotosDeEntrega(),
     archivoDeDatos: 'js/datos.js',
   };
@@ -71,7 +72,7 @@ async function servirDatos(req, res) {
 async function servirLqip(req, res) {
   let base = '';
   try {
-    base = fs.readFileSync(path.join(RAIZ, 'js', 'lqip.js'), 'utf8');
+    base = fs.readFileSync(path.join(RAIZ, '_tools', 'lqip-base.js'), 'utf8');
   } catch (_) {
     base = 'window.ECM = window.ECM || {};\nwindow.ECM.LQIP = {};\n';
   }

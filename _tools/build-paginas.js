@@ -47,6 +47,7 @@ function crearRenderizador(datos) {
 const CONFIG = datos.CONFIG;
 const PRODUCTOS = datos.PRODUCTOS || [];
 const COLECCIONES = datos.COLECCIONES || [];
+const BANNERS = datos.BANNERS || [];
 // Las fotos de entrega llegan como lista. En la consola se leen del disco;
 // en producción las manda el servidor, porque allí no se puede listar.
 const ENTREGAS = datos.entregas || null;
@@ -168,7 +169,9 @@ const ORG = {
   image: abs('assets/logo/og-image.jpg'),
   ...(CONFIG.correo ? { email: CONFIG.correo } : {}),
   // Le dice a Google que estos perfiles son de la misma tienda
-  sameAs: [CONFIG.instagram.url, CONFIG.tiktok && CONFIG.tiktok.url].filter(Boolean),
+  sameAs: ['instagram', 'tiktok', 'facebook']
+    .map((red) => CONFIG[red] && CONFIG[red].url)
+    .filter(Boolean),
   address: {
     '@type': 'PostalAddress',
     addressLocality: CONFIG.ciudad,
@@ -249,7 +252,7 @@ function jsonldProducto(p) {
     '@id': abs(urlProducto(p)) + '#producto',
     name: p.nombre,
     description: p.descripcion,
-    image: p.imagenes.map((im) => abs(`assets/img/${im}-1200.webp`)),
+    image: (p.imagenes || []).map((im) => abs(`assets/img/${im}-1200.webp`)),
     url: abs(urlProducto(p)),
     brand: { '@type': 'Brand', name: p.marca },
     category: 'Gorras > ' + p.tipo,
@@ -377,8 +380,50 @@ function slidesDeConfig() {
   return slides;
 }
 
+/* La foto principal de un producto, o el emblema de la marca si todavía no
+   tiene ninguna. Sin esto se pedían rutas con la palabra "undefined" y salía
+   el icono de imagen rota, también en la vista previa al compartir. */
+const SIN_FOTO = 'emblema';
+const fotoDe = (p, i) => (p.imagenes && p.imagenes[i !== undefined ? i : 0]) || SIN_FOTO;
+const tieneFoto = (p) => !!(p.imagenes && p.imagenes.length);
+
+/* ── Banners de promoción ──────────────────────────────────────────────────
+   Los crea el dueño desde el panel. Si no hay ninguno activo NO se pinta la
+   sección: mejor nada que un bloque vacío. */
+function banners() {
+  if (!BANNERS.length) return '';
+  const tarjetas = BANNERS.map((b) => {
+    const foto = b.imagen
+      ? `<picture>
+              <source type="image/webp" srcset="assets/img/${esc(b.imagen)}-400.webp 400w, assets/img/${esc(b.imagen)}-760.webp 760w"
+                      sizes="(min-width: 900px) 340px, 86vw">
+              <img src="assets/img/${esc(b.imagen)}-760.jpg" alt="" width="760" height="760" loading="lazy" decoding="async">
+            </picture>`
+      : '';
+    const boton = b.boton && b.enlace
+      ? `<a class="btn btn--primario btn--sm" href="${esc(b.enlace)}">${esc(b.boton)}</a>`
+      : '';
+    return `<article class="promo">
+            ${foto}
+            <div class="promo-txt">
+              ${b.titulo ? `<b>${esc(b.titulo)}</b>` : ''}
+              ${b.texto ? `<p>${esc(b.texto)}</p>` : ''}
+              ${boton}
+            </div>
+          </article>`;
+  }).join('\n          ');
+
+  return `<section class="seccion seccion--ceñida" aria-label="Promociones">
+      <div class="contenedor">
+        <div class="promos revelar">
+          ${tarjetas}
+        </div>
+      </div>
+    </section>`;
+}
+
 function fotoPrincipalDeSlide(s) {
-  return s.suelta ? s.imagen : s.p.imagenes[0];
+  return s.suelta ? s.imagen : fotoDe(s.p);
 }
 
 function diapositivas() {
@@ -484,6 +529,15 @@ function colecciones() {
 }
 
 /* ── Página: home ──────────────────────────────────────────────────────── */
+/* Lo que el dueño escriba en Configuración › Buscadores manda sobre el texto
+   por defecto. Si lo deja vacío, se usa el de siempre. */
+const seo = CONFIG.seo || {};
+const conSeo = (titulo, descripcion) => ({
+  titulo: seo.titulo || titulo,
+  descripcion: seo.descripcion || descripcion,
+  imagen: seo.imagen ? abs('assets/img/' + seo.imagen + '-1200.webp') : null,
+});
+
 function construirHome() {
   const faq = CONFIG.faq.map((f) =>
     `<details>
@@ -492,8 +546,16 @@ function construirHome() {
         </details>`).join('\n        ');
 
   const cuerpo = leer('cuerpo-home.html')
+    .replace('{{BANNERS}}', banners())
     .replace('{{FAQ}}', faq)
     .replace('{{H1}}', esc(`${CONFIG.marca} — gorras nacionales e importadas en ${CONFIG.ciudad}`))
+    // Los puntos los crea el JavaScript. Sin reservarles el ancho, al
+    // aparecer empujan las flechas de los lados y eso cuenta como salto de
+    // maquetación. Cada punto mide 44 px y llevan 6 px de separación.
+    .replace('{{PUNTOS_ANCHO}}', (() => {
+      const n = slidesDeConfig().length;
+      return n > 1 ? ` style="min-width:${n * 44 + (n - 1) * 6}px"` : '';
+    })())
     .replace('{{DIAPOSITIVAS}}', diapositivas())
     .replace('{{COLECCIONES}}', colecciones())
     .replace('{{ENTREGAS}}', entregas())
@@ -510,9 +572,15 @@ function construirHome() {
       imagesrcset="assets/img/${primeraFoto}-400.webp 400w, assets/img/${primeraFoto}-760.webp 760w, assets/img/${primeraFoto}-1200.webp 1200w"
       imagesizes="(min-width: 900px) 560px, 100vw" type="image/webp">`;
 
+  // Lo que el dueño escriba en Configuración › Buscadores manda sobre esto
+  const propio = conSeo(
+    `Gorras New Era en ${CONFIG.ciudad} | ${CONFIG.marca}`,
+    'Tienda virtual de gorras nacionales e importadas en Medellín. Snapbacks New Era seleccionadas una por una. Pide la tuya por WhatsApp.'
+  );
   const head = cabeza({
-    titulo: `Gorras New Era en ${CONFIG.ciudad} | ${CONFIG.marca}`,
-    descripcion: 'Tienda virtual de gorras nacionales e importadas en Medellín. Snapbacks New Era seleccionadas una por una. Pide la tuya por WhatsApp.',
+    titulo: propio.titulo,
+    descripcion: propio.descripcion,
+    imagen: propio.imagen || undefined,
     ruta: 'index.html',
     jsonld: jsonldHome(),
     precargarImagen: precarga,
@@ -526,7 +594,7 @@ function construirCatalogo() {
   // Lista simple para quien no tenga JS: el catálogo nunca queda en blanco
   const noscript = '<noscript>' + PRODUCTOS.map((p) =>
     `<article class="card"><a class="card-a" href="${urlProducto(p)}">` +
-    `<div class="card-foto"><img src="assets/img/${p.imagenes[0]}-400.webp" alt="${esc(altDe(p, 0))}" width="400" height="400"></div>` +
+    `<div class="card-foto"><img src="assets/img/${fotoDe(p)}-400.webp" alt="${esc(altDe(p, 0))}" width="400" height="400"></div>` +
     `<div class="card-cuerpo"><span class="card-marca">${esc(p.marca)}</span>` +
     `<h2 class="card-nombre">${esc(p.nombre)}</h2>` +
     `<p class="card-consultar">${tienePrecio(p) ? precioTexto(p.precio) : 'Precio por WhatsApp'}</p>` +
@@ -536,8 +604,8 @@ function construirCatalogo() {
 
   const primera = PRODUCTOS[0];
   const precargaCat = primera ? `<link rel="preload" as="image" fetchpriority="high"
-      href="assets/img/${primera.imagenes[0]}-400.webp"
-      imagesrcset="assets/img/${primera.imagenes[0]}-400.webp 400w, assets/img/${primera.imagenes[0]}-760.webp 760w"
+      href="assets/img/${fotoDe(primera)}-400.webp"
+      imagesrcset="assets/img/${fotoDe(primera)}-400.webp 400w, assets/img/${fotoDe(primera)}-760.webp 760w"
       imagesizes="(min-width: 900px) 280px, 46vw" type="image/webp">` : '';
 
   const head = cabeza({
@@ -561,7 +629,7 @@ function construirProducto(p) {
   else if (p.nuevo) insignias.push('<span class="insignia insignia--nuevo">Nuevo</span>');
   else if (p.destacado) insignias.push('<span class="insignia insignia--destacado">Destacado</span>');
 
-  const miniaturas = p.imagenes.length > 1
+  const miniaturas = (p.imagenes || []).length > 1
     ? '<div class="miniaturas" role="group" aria-label="Fotos del producto">' +
       p.imagenes.map((im, i) =>
         `<button type="button" class="mini" aria-current="${i === 0}" aria-label="Ver la foto ${i + 1} de ${p.imagenes.length}">` +
@@ -628,7 +696,7 @@ function construirProducto(p) {
     .replace(/\{\{NOMBRE\}\}/g, esc(p.nombre))
     .replace(/\{\{MARCA_URL\}\}/g, encodeURIComponent(p.marca))
     .replace(/\{\{MARCA\}\}/g, esc(p.marca))
-    .replace(/\{\{IMG0\}\}/g, p.imagenes[0])
+    .replace(/\{\{IMG0\}\}/g, fotoDe(p))
     .replace(/\{\{ALT0\}\}/g, esc(altDe(p, 0)))
     .replace('{{INSIGNIAS}}', insignias.length ? `<div class="insignias">${insignias.join('')}</div>` : '<div class="insignias"></div>')
     .replace('{{MINIATURAS}}', miniaturas)
@@ -646,15 +714,16 @@ function construirProducto(p) {
     .replace('{{STICKY_BOTON}}', stickyBoton);
 
   const precarga = `<link rel="preload" as="image" fetchpriority="high"
-      href="assets/img/${p.imagenes[0]}-760.webp"
-      imagesrcset="assets/img/${p.imagenes[0]}-400.webp 400w, assets/img/${p.imagenes[0]}-760.webp 760w, assets/img/${p.imagenes[0]}-1200.webp 1200w"
+      href="assets/img/${fotoDe(p)}-760.webp"
+      imagesrcset="assets/img/${fotoDe(p)}-400.webp 400w, assets/img/${fotoDe(p)}-760.webp 760w, assets/img/${fotoDe(p)}-1200.webp 1200w"
       imagesizes="(min-width:900px) 560px, 94vw" type="image/webp">`;
 
   const head = cabeza({
     titulo: `${p.nombre} | ${CONFIG.marca}`,
     descripcion: recortar(p.descripcion, 155),
     ruta: urlProducto(p),
-    imagen: abs(`assets/img/og-${p.imagenes[0]}.jpg`),
+    // Sin foto propia se comparte la imagen de la marca, que sí existe
+    imagen: tieneFoto(p) ? abs(`assets/img/og-${fotoDe(p)}.jpg`) : undefined,
     imagenAlt: altDe(p, 0),
     tipoOg: 'product',
     jsonld: jsonldProducto(p),

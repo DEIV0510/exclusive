@@ -232,8 +232,10 @@
   transition: color var(--t-rapido);
 }
 .barra-inf svg { width: 21px; height: 21px; }
-.barra-inf [aria-current='page'], .barra-inf .activo { color: var(--brillo); }
-.barra-inf [aria-current='page']::before, .barra-inf .activo::before {
+/* Hijos DIRECTOS: si no, esta regla alcanza también a la burbuja del
+   contador (que lleva la clase "activo") y la deja azul sobre azul. */
+.barra-inf > [aria-current='page'], .barra-inf > .activo { color: var(--brillo); }
+.barra-inf > [aria-current='page']::before, .barra-inf > .activo::before {
   content: '';
   position: absolute;
   top: 0;
@@ -874,3 +876,21 @@
    preguntar por las tarjetas. En navegadores sin :has() simplemente no se
    reserva, que es como estaba antes.                                      */
 .rejilla:not(:has(> .card)) { min-height: 150svh; }
+
+/* ── Alto reservado en la portada ──────────────────────────────────────────
+   Igual que la retícula del catálogo: estos bloques los pinta el JavaScript
+   con los datos de la tienda, y hasta que llegan todo lo de abajo se dibuja
+   más arriba y luego salta (CLS de 0,12 medido en la portada). Los altos son
+   los que ocupan de verdad una vez llenos, medidos a 390 y a 1360 px.
+   Con :has() la reserva desaparece sola en cuanto entran los hijos.       */
+.riel-productos:not(:has(> .card)) { min-height: 368px; }
+.confianza:not(:has(> *)) { min-height: 296px; }
+.pasos:not(:has(> *)) { min-height: 288px; }
+/* Una fila de marcas; si el dueño añade más, la reserva se queda corta y
+   no de más, que es el lado bueno en el que equivocarse. */
+.marcas:not(:has(> *)) { min-height: 88px; }
+
+@media (min-width: 700px) {
+  .confianza:not(:has(> *)) { min-height: 123px; }
+  .pasos:not(:has(> *)) { min-height: 102px; }
+}

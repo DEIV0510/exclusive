@@ -135,6 +135,9 @@
     { id: 'pedidos', titulo: 'Pedidos', icono: 'i-caja', permiso: 'pedidos', contador: 'pedidosNuevos' },
     { id: 'config', titulo: 'Configuración', icono: 'i-tuerca', permiso: 'config' },
     { id: 'usuarios', titulo: 'Administradores', icono: 'i-gente', permiso: 'usuarios' },
+    // Sin permiso de usuarios no se ve la lista, pero SÍ la propia cuenta:
+    // si no, un editor no tendría forma de cambiar su contraseña.
+    { id: 'micuenta', titulo: 'Mi cuenta', icono: 'i-gente' },
   ];
 
   function pintarNav(contadores) {
@@ -689,7 +692,11 @@
 
   /* ═══ BLOQUES DE CONTENIDO (formularios generados) ════════════════════ */
   function guardarBloque(clave, valor, despues) {
-    return intentar(api('PUT', '/ajustes/' + clave, { valor: valor })).then(despues || function () {});
+    // El .catch cierra la cadena: sin él, cada guardado fallido dejaba un
+    // rechazo de promesa suelto en la consola del navegador.
+    return intentar(api('PUT', '/ajustes/' + clave, { valor: valor }))
+      .then(despues || function () {})
+      .catch(function () { /* intentar() ya avisó al usuario */ });
   }
 
   function vistaInicio() {
@@ -1164,6 +1171,36 @@
     }).catch(errorDeCarga);
   }
 
+  /* ═══ MI CUENTA ═══════════════════════════════════════════════════════ */
+  function vistaMiCuenta() {
+    encabezar('Mi cuenta', 'Panel');
+    contenido().innerHTML =
+      '<form class="tarjeta" id="f-yo"><h2>Tus datos</h2>' +
+      '<p class="sub">Entraste como <b>' + esc(YO.correo) + '</b> · ' +
+      (YO.rol === 'admin' ? 'Administrador' : 'Editor') + '</p>' +
+      campo('nombre', 'Tu nombre', YO.nombre, { max: 80, requerido: true }) +
+      '<div style="text-align:right"><button class="btn btn--primario">Guardar nombre</button></div></form>' +
+
+      '<form class="tarjeta" id="f-clave"><h2>Cambiar tu contraseña</h2>' +
+      '<p class="sub">Al cambiarla se cierran tus otras sesiones y tendrás que volver a entrar.</p>' +
+      campo('claveActual', 'Tu contraseña actual', '', { tipo: 'password', requerido: true }) +
+      campo('clave', 'Contraseña nueva', '', { tipo: 'password', requerido: true, ayuda: 'Mínimo 10 caracteres, con letras y números.' }) +
+      '<div style="text-align:right"><button class="btn btn--primario">Cambiar contraseña</button></div></form>';
+    contadores(contenido());
+
+    $('#f-yo').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      intentar(api('PUT', '/usuarios/' + YO.id, { nombre: new FormData(this).get('nombre') }))
+        .then(function () { location.reload(); });
+    });
+    $('#f-clave').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var fd = new FormData(this);
+      intentar(api('PUT', '/usuarios/' + YO.id, { clave: fd.get('clave'), claveActual: fd.get('claveActual') }))
+        .then(function () { setTimeout(function () { location.href = '/admin/login'; }, 1200); });
+    });
+  }
+
   /* ═══ ENRUTADO ════════════════════════════════════════════════════════ */
   function ir() {
     var ruta = (location.hash || '#/tablero').replace(/^#\/?/, '').split('/');
@@ -1193,6 +1230,7 @@
       case 'pedidos': return vistaPedidos();
       case 'config': return vistaConfig();
       case 'usuarios': return vistaUsuarios();
+      case 'micuenta': return vistaMiCuenta();
       default: return vistaTablero();
     }
   }

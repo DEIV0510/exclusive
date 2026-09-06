@@ -4,7 +4,9 @@ const fs = require('fs');
 const path = require('path');
 
 const entrada = path.join(__dirname, 'lqip.json');
-const salida = path.join(__dirname, '..', 'js', 'lqip.js');
+// Fuera de js/: si viviera ahí, el archivo estático taparía la ruta que
+// sirve el servidor y las fotos subidas desde el panel perderían su miniatura.
+const salida = path.join(__dirname, 'lqip-base.js');
 
 const datos = JSON.parse(fs.readFileSync(entrada, 'utf8'));
 const lineas = Object.entries(datos)
@@ -26,4 +28,4 @@ ${lineas}
   'utf8'
 );
 
-console.log(`js/lqip.js generado con ${Object.keys(datos).length} imágenes`);
+console.log(`_tools/lqip-base.js generado con ${Object.keys(datos).length} imágenes`);

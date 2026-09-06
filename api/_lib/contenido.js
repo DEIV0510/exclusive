@@ -154,11 +154,12 @@ async function productoParaPanel(id) {
    mano, para no tener que tocar nada del JavaScript de la tienda. */
 async function configDeTienda() {
   const [identidad, whatsapp, redes, sitio, moneda, colores, carrusel, confianza,
-    pasos, faq, checkout, carruselSegundos] = await Promise.all([
+    pasos, faq, checkout, carruselSegundos, seo] = await Promise.all([
     leerAjuste('identidad'), leerAjuste('whatsapp'), leerAjuste('redes'),
     leerAjuste('sitio'), leerAjuste('moneda'), leerAjuste('colores'),
     leerAjuste('carrusel'), leerAjuste('confianza'), leerAjuste('pasos'),
     leerAjuste('faq'), leerAjuste('checkout'), leerAjuste('carruselSegundos'),
+    leerAjuste('seo'),
   ]);
 
   const marcas = (await listarMarcas()).filter((m) => m.visible).map((m) => m.nombre);
@@ -184,6 +185,8 @@ async function configDeTienda() {
     pasos,
     faq,
     checkout,
+    // Lo que el dueño escriba en Configuración › Buscadores
+    seo,
   };
 
   // Las redes apagadas no salen: así la tienda no pinta un enlace vacío
@@ -196,10 +199,11 @@ async function configDeTienda() {
 }
 
 async function paqueteDeTienda() {
-  const [config, productos, colecciones] = await Promise.all([
+  const [config, productos, colecciones, banners] = await Promise.all([
     configDeTienda(),
     listarProductos({ incluirOcultos: false }),
     listarColecciones(),
+    listarBanners(),
   ]);
   return {
     config,
@@ -207,6 +211,10 @@ async function paqueteDeTienda() {
     colecciones: colecciones
       .filter((c) => c.visible)
       .map((c) => ({ imagen: c.imagen, nombre: c.nombre, nota: c.nota })),
+    // Un banner apagado no sale de aquí: la tienda nunca llega a verlo
+    banners: banners
+      .filter((b) => b.activo)
+      .map((b) => ({ titulo: b.titulo, texto: b.texto, imagen: b.imagen, boton: b.boton, enlace: b.enlace })),
   };
 }
 

@@ -78,9 +78,20 @@
            '<use href="#' + id + '"></use></svg>';
   }
 
+  /* Un producto puede no tener ninguna foto todavía. Sin esto se pedían
+     rutas con la palabra "undefined" y salía el icono de imagen rota. */
+  var SIN_FOTO = 'assets/logo/emblema-256.webp';
+
   /* ── Imágenes: LQIP + srcset + carga diferida ────────────────────────── */
   function figura(base, alt, ops) {
     ops = ops || {};
+    // Un producto puede no tener foto todavía. Sin esto se pedían rutas con la
+    // palabra "undefined" y salía el icono de imagen rota.
+    if (!base) {
+      return '<span class="foto foto--vacia ' + (ops.claseCaja || '') + '">' +
+        '<img src="' + SIN_FOTO + '" alt="' + esc(alt || '') + '" width="256" height="256" loading="lazy" decoding="async">' +
+        '</span>';
+    }
     var sizes = ops.sizes || '(min-width:900px) 280px, 46vw';
     var lqip = ECM.LQIP && ECM.LQIP[base];
     var fondo = lqip ? ' style="background-image:url(' + lqip + ')"' : '';

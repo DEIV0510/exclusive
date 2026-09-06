@@ -38,7 +38,7 @@ const TIPOS = {
 };
 
 /* Nunca servir nada de estas carpetas por web */
-const PROHIBIDO = ['_datos', 'api', 'node_modules', '_tools', '.git'];
+const PROHIBIDO = ['_datos', '_panel', 'api', 'node_modules', '_tools', '.git'];
 
 /* Las direcciones que arma el servidor, no el disco */
 const esPaginaDeTienda = (c) =>
@@ -82,10 +82,10 @@ const servidor = http.createServer(async (req, res) => {
     if (camino === '/admin' || camino === '/admin/' || camino === '/admin/index.html') {
       const redirigido = await protegerPanel(req, res);
       if (redirigido) return;
-      return archivo(res, path.join(RAIZ, 'admin', 'index.html'));
+      return archivo(res, path.join(RAIZ, '_panel', 'index.html'));
     }
     if (camino === '/admin/login' || camino === '/admin/login.html') {
-      return archivo(res, path.join(RAIZ, 'admin', 'login.html'));
+      return archivo(res, path.join(RAIZ, '_panel', 'login.html'));
     }
 
     // 4. Páginas de la tienda: SIEMPRE las arma el servidor con lo que hay en
