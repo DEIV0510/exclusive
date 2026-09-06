@@ -10,6 +10,8 @@
 
        node _tools/sembrar.js
        node _tools/sembrar.js --admin tu@correo.com      (crea el usuario)
+       node _tools/sembrar.js --admin tu@correo.com --clave "TuContraseña"
+       node _tools/sembrar.js --borrar-usuario otro@correo.com
        node _tools/sembrar.js --rehacer                  (vuelve a empezar)
    ═══════════════════════════════════════════════════════════════════════════ */
 'use strict';
@@ -28,6 +30,12 @@ const args = process.argv.slice(2);
 const rehacer = args.includes('--rehacer');
 const iAdmin = args.indexOf('--admin');
 const correoAdmin = iAdmin >= 0 ? args[iAdmin + 1] : null;
+// Con --clave eliges tú la contraseña; sin ella se genera una y se imprime
+const iClave = args.indexOf('--clave');
+const claveAdmin = iClave >= 0 ? args[iClave + 1] : null;
+// Para quitar el usuario de pruebas cuando ya tengas el tuyo
+const iBorrar = args.indexOf('--borrar-usuario');
+const correoABorrar = iBorrar >= 0 ? args[iBorrar + 1] : null;
 
 /* ── Lee los archivos de siempre sin ejecutar nada peligroso ─────────────── */
 function leerArchivosDeMano() {
@@ -71,7 +79,8 @@ async function principal() {
     await sembrarColecciones(COLECCIONES);
   }
 
-  if (correoAdmin) await crearAdmin(correoAdmin);
+  if (correoAdmin) await crearAdmin(correoAdmin, claveAdmin);
+  if (correoABorrar) await borrarUsuario(correoABorrar);
 
   const n = await uno('SELECT COUNT(*) AS n FROM productos');
   const u = await uno('SELECT COUNT(*) AS n FROM usuarios');
@@ -194,7 +203,25 @@ async function sembrarColecciones(lista) {
 }
 
 /* ── Primer usuario ──────────────────────────────────────────────────────── */
-async function crearAdmin(correo) {
+async function borrarUsuario(correo) {
+  const limpio = String(correo).trim().toLowerCase();
+  const u = await uno('SELECT id FROM usuarios WHERE correo = ?', [limpio]);
+  if (!u) {
+    console.log(`\n  No hay ningún usuario con el correo ${limpio}.`);
+    return;
+  }
+  const otros = await uno("SELECT COUNT(*) AS n FROM usuarios WHERE rol = 'admin' AND activo = 1 AND id <> ?", [u.id]);
+  if (Number(otros.n) === 0) {
+    console.log(`\n  No puedo borrarlo: es el único administrador que queda.`);
+    console.log('  Crea antes el tuyo con --admin tu@correo.com --clave "TuContraseña"\n');
+    return;
+  }
+  await correr('DELETE FROM sesiones WHERE usuario_id = ?', [u.id]);
+  await correr('DELETE FROM usuarios WHERE id = ?', [u.id]);
+  console.log(`\n  Usuario ${limpio} eliminado.`);
+}
+
+async function crearAdmin(correo, clavePedida) {
   const limpio = String(correo).trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(limpio)) {
     console.log(`\n  "${correo}" no parece un correo válido.`);
@@ -202,21 +229,42 @@ async function crearAdmin(correo) {
   }
   const ya = await uno('SELECT id FROM usuarios WHERE correo = ?', [limpio]);
   if (ya) {
-    console.log(`\n  Ese usuario ya existe. Si olvidaste la contraseña, córrelo con --rehacer-clave.`);
+    console.log(`\n  Ese usuario ya existe. Para cambiarle la contraseña, entra al panel`);
+    console.log('  y ve a "Mi cuenta". Si la olvidaste, crea otro usuario con --admin.');
     return;
   }
-  // Contraseña aleatoria fuerte: no queda escrita en ningún archivo del proyecto
-  const clave = crypto.randomBytes(12).toString('base64url').replace(/[^A-Za-z0-9]/g, '') + '7k';
+
+  let clave = clavePedida;
+  if (clave) {
+    const problema = auth.revisarFortaleza(clave);
+    if (problema) {
+      console.log('\n  ' + problema);
+      console.log('  Elige otra y vuelve a intentarlo.\n');
+      return;
+    }
+  } else {
+    // Sin --clave se genera una fuerte: no queda escrita en ningún archivo
+    clave = crypto.randomBytes(12).toString('base64url').replace(/[^A-Za-z0-9]/g, '') + '7k';
+  }
   await correr(
     'INSERT INTO usuarios (correo, nombre, hash, rol, activo, creado) VALUES (?, ?, ?, ?, 1, ?)',
     [limpio, 'Administrador', auth.hashear(clave), 'admin', ahora()]
   );
-  console.log('\n  ┌──────────────────────────────────────────────────────────┐');
-  console.log('  │  USUARIO CREADO. Apunta esto AHORA: no se vuelve a ver.  │');
-  console.log('  └──────────────────────────────────────────────────────────┘');
-  console.log(`     Correo:     ${limpio}`);
-  console.log(`     Contraseña: ${clave}`);
-  console.log('\n     Entra en /admin y cámbiala desde Administradores.\n');
+  if (clavePedida) {
+    console.log('\n  ┌──────────────────────────────────────────────────────────┐');
+    console.log('  │  USUARIO CREADO                                          │');
+    console.log('  └──────────────────────────────────────────────────────────┘');
+    console.log(`     Correo:     ${limpio}`);
+    console.log('     Contraseña: la que acabas de elegir');
+    console.log('\n     Entra en /admin\n');
+  } else {
+    console.log('\n  ┌──────────────────────────────────────────────────────────┐');
+    console.log('  │  USUARIO CREADO. Apunta esto AHORA: no se vuelve a ver.  │');
+    console.log('  └──────────────────────────────────────────────────────────┘');
+    console.log(`     Correo:     ${limpio}`);
+    console.log(`     Contraseña: ${clave}`);
+    console.log('\n     Entra en /admin y cámbiala desde "Mi cuenta".\n');
+  }
 }
 
 principal().catch((e) => {

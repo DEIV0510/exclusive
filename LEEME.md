@@ -231,15 +231,28 @@ No se puede quedar la tienda sin ningún administrador: el panel te lo impide.
 Al cambiar tu contraseña se cierran todas tus otras sesiones y tienes que
 volver a entrar.
 
-### Si pierdes la contraseña
+### Crear tu usuario
 
 Desde el computador, en la carpeta del proyecto:
 
 ```
-node _tools/sembrar.js --admin otro@correo.com
+node _tools/sembrar.js --admin tu@correo.com --clave "TuContraseña2026"
 ```
 
-Crea un usuario nuevo y te muestra una contraseña **una sola vez**. Apúntala.
+La contraseña la eliges tú: mínimo 10 caracteres, con letras y números. Si
+prefieres que te genere una, quita `--clave` y te la enseña **una sola vez**.
+
+### Borrar un usuario
+
+```
+node _tools/sembrar.js --borrar-usuario otro@correo.com
+```
+
+No te dejará borrar al último administrador que quede.
+
+### Si pierdes la contraseña
+
+Crea otro usuario con el comando de arriba y borra el viejo.
 
 ---
 
