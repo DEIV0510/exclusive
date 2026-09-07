@@ -21,10 +21,19 @@ const { cabecerasSeguras } = require('./http');
 
 const { crearRenderizador } = require(path.join(RAIZ, '_tools', 'build-paginas.js'));
 
-/* La caché del borde de Vercel evita pagar una función por cada visita. Diez
-   segundos es poco para el visitante y suficiente para que el dueño vea sus
-   cambios casi al instante al guardar en el panel. */
-const CACHE_PAGINA = 'public, max-age=0, s-maxage=10, stale-while-revalidate=86400';
+/* La caché del borde de Vercel evita pagar una función por cada visita.
+
+   OJO con stale-while-revalidate: con él, pasados los 10 segundos la red de
+   Vercel sigue entregando la copia VIEJA mientras pide la nueva por detrás.
+   Medido en producción: el dueño guardaba un cambio y seguía sin verlo. Para
+   una tienda que se edita desde un panel eso es inaceptable, así que se quita:
+   a los 10 segundos se vuelve a preguntar de verdad. El coste es una llamada
+   a la función cada 10 segundos como mucho; el resto de visitas van por caché.
+
+   Si algún día la tienda recibe mucho tráfico y esto se nota en la factura,
+   sube s-maxage, pero NO vuelvas a poner stale-while-revalidate sin avisarle
+   al dueño de que sus cambios tardarán en verse. */
+const CACHE_PAGINA = 'public, max-age=0, s-maxage=10';
 
 /* ── Datos ───────────────────────────────────────────────────────────────── */
 
