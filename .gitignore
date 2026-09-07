@@ -15,3 +15,4 @@ _estatico/
 .vercel
 
 .vercel
+.env*

@@ -127,8 +127,8 @@ async function despachar(req, res, rutaCruda) {
    Para saber de un vistazo qué falta por configurar al publicar. NO enseña
    ninguna clave: solo dice si cada pieza está puesta y si responde. */
 async function estado(req, res) {
-  const { enVercel } = require('./db');
-  const hayBase = !!process.env.TURSO_URL || !enVercel();
+  const { enVercel, urlDeTurso } = require('./db');
+  const hayBase = !!urlDeTurso() || !enVercel();
   const hayFotos = !!process.env.BLOB_READ_WRITE_TOKEN;
 
   let base = 'sin configurar';
@@ -145,7 +145,7 @@ async function estado(req, res) {
 
   const falta = [];
   if (!hayBase) falta.push('Falta la base de datos. Corre: vercel integration add turso');
-  if (base === 'no responde') falta.push('La base está configurada pero no responde. Revisa TURSO_URL y TURSO_TOKEN.');
+  if (base === 'no responde') falta.push('La base está configurada pero no responde. Revisa TURSO_DATABASE_URL y TURSO_AUTH_TOKEN en Vercel.');
   if (!hayFotos && enVercel()) {
     falta.push('Falta el almacén de fotos (Vercel Blob). La tienda funciona, pero no se pueden subir fotos nuevas desde el panel.');
   }

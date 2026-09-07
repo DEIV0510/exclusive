@@ -12,6 +12,7 @@
        node _tools/sembrar.js --admin tu@correo.com      (crea el usuario)
        node _tools/sembrar.js --admin tu@correo.com --clave "TuContraseña"
        node _tools/sembrar.js --borrar-usuario otro@correo.com
+       node _tools/sembrar.js --produccion ...   (contra la base publicada)
        node _tools/sembrar.js --rehacer                  (vuelve a empezar)
    ═══════════════════════════════════════════════════════════════════════════ */
 'use strict';
@@ -22,6 +23,33 @@ const vm = require('vm');
 const crypto = require('crypto');
 
 const RAIZ = path.join(__dirname, '..');
+
+/* ── Trabajar contra la base de producción ─────────────────────────────────
+   Con --produccion se leen las credenciales de .env.local, que es el archivo
+   que deja "vercel env pull". No se imprimen nunca ni se guardan en ningún
+   sitio: solo se ponen en el entorno de este comando.
+   SIN esa opción se trabaja contra la base de tu computador, como siempre. */
+if (process.argv.includes('--produccion')) {
+  const env = path.join(RAIZ, '.env.local');
+  if (!fs.existsSync(env)) {
+    console.error('\n  No encuentro .env.local. Bájalo primero con:\n');
+    console.error('      vercel env pull .env.local\n');
+    process.exit(1);
+  }
+  fs.readFileSync(env, 'utf8').split(/\r?\n/).forEach((linea) => {
+    const m = linea.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+    if (!m) return;
+    process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
+  });
+  if (!process.env.TURSO_DATABASE_URL && !process.env.TURSO_URL) {
+    console.error('\n  .env.local no trae las credenciales de Turso.');
+    console.error('  Comprueba que la base está creada: vercel integration list\n');
+    process.exit(1);
+  }
+  const donde = (process.env.TURSO_DATABASE_URL || process.env.TURSO_URL).replace(/\?.*$/, '');
+  console.log('\n  Trabajando contra la base de PRODUCCIÓN (' + donde + ')\n');
+}
+
 const { todos, uno, correr, prepararEsquema, ahora } = require(path.join(RAIZ, 'api', '_lib', 'db.js'));
 const { guardarAjuste } = require(path.join(RAIZ, 'api', '_lib', 'contenido.js'));
 const auth = require(path.join(RAIZ, 'api', '_lib', 'auth.js'));

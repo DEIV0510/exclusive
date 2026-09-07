@@ -4,11 +4,14 @@
    Una sola conexión para todo el proyecto. El mismo código sirve en dos sitios:
 
      · En tu computador          -> un archivo SQLite en _datos/tienda.db
-     · En Vercel (producción)    -> Turso, con las variables TURSO_URL y
-                                    TURSO_TOKEN
+     · En Vercel (producción)    -> Turso
 
-   No hace falta cambiar nada al pasar de uno a otro: si no hay TURSO_URL,
-   usa el archivo local.
+   No hace falta cambiar nada al pasar de uno a otro: si no hay variables de
+   Turso, usa el archivo local.
+
+   La integración de Turso en Vercel crea las variables llamadas
+   TURSO_DATABASE_URL y TURSO_AUTH_TOKEN. Se aceptan también TURSO_URL y
+   TURSO_TOKEN por si alguien las pone a mano con esos nombres.
    ═══════════════════════════════════════════════════════════════════════════ */
 'use strict';
 
@@ -25,13 +28,18 @@ let esquemaListo = false;
    que ser Turso: no hay dónde crear un archivo. */
 const enVercel = () => process.env.VERCEL === '1' || !!process.env.VERCEL_ENV;
 
+/* Los dos nombres posibles, el que ponga Vercel primero */
+const urlDeTurso = () => process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || '';
+const testigoDeTurso = () => process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN || '';
+
 function url() {
-  if (process.env.TURSO_URL) return process.env.TURSO_URL;
+  const remota = urlDeTurso();
+  if (remota) return remota;
 
   if (enVercel()) {
     // Sin esto el fallo era un "ENOENT" que no le dice nada a nadie
     throw new Error(
-      'Falta configurar la base de datos: no está la variable TURSO_URL. ' +
+      'Falta configurar la base de datos: no está TURSO_DATABASE_URL. ' +
       'En Vercel el disco es de solo lectura, así que hace falta Turso. ' +
       'Corre "vercel integration add turso" y vuelve a publicar. ' +
       'Puedes comprobar el estado en /api/estado. Ver LEEME.md, punto 11.'
@@ -48,7 +56,7 @@ function db() {
   if (!cliente) {
     cliente = createClient({
       url: url(),
-      authToken: process.env.TURSO_TOKEN || undefined,
+      authToken: testigoDeTurso() || undefined,
     });
   }
   return cliente;
@@ -226,4 +234,4 @@ async function lote(sentencias) {
 
 const ahora = () => new Date().toISOString();
 
-module.exports = { db, prepararEsquema, todos, uno, correr, lote, ahora, RAIZ, enVercel };
+module.exports = { db, prepararEsquema, todos, uno, correr, lote, ahora, RAIZ, enVercel, urlDeTurso };

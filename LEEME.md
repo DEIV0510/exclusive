@@ -304,7 +304,8 @@ un **Blob**. Deja la variable `BLOB_READ_WRITE_TOKEN`.
 vercel deploy --prod --yes
 ```
 
-**4. Crear tu usuario en producción.** Con las variables de Turso a mano:
+**4. Crear tu usuario en producción.** Baja las variables con
+`vercel env pull .env.local` y córrelo. El comando lee ese archivo solo:
 
 En PowerShell (que es la consola de Windows):
 
