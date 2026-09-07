@@ -145,7 +145,12 @@ async function lqipDeTodas() {
   return salida;
 }
 
-/* Bases disponibles: las subidas por el panel más las que ya venían en disco */
+/* Bases disponibles: las subidas por el panel más las que ya venían en disco.
+
+   En Vercel la carpeta assets/img no se puede listar desde la función (no va
+   en includeFiles), pero _tools/lqip.json sí viaja con el despliegue y tiene
+   una entrada por cada foto original. Sirve de índice: sin esto, la biblioteca
+   del panel salía vacía en producción aunque las fotos estuvieran ahí. */
 async function listarBases() {
   const subidas = (await todos('SELECT DISTINCT base FROM archivos')).map((f) => f.base);
   let enDisco = [];
@@ -154,7 +159,11 @@ async function listarBases() {
       .filter((f) => f.endsWith('-400.webp'))
       .map((f) => f.replace('-400.webp', ''));
   } catch (_) { /* en Vercel no hay carpeta que leer */ }
-  return [...new Set([...enDisco, ...subidas])].sort();
+  let deArranque = [];
+  try {
+    deArranque = Object.keys(require(path.join(RAIZ, '_tools', 'lqip.json')));
+  } catch (_) { /* si no está, nos quedamos con lo demás */ }
+  return [...new Set([...enDisco, ...deArranque, ...subidas])].sort();
 }
 
 /* Borra una foto de todos sus tamaños. Solo si ya no la usa ningún producto. */

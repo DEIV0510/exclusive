@@ -506,18 +506,32 @@ function entregas() {
   return '<div class="mosaico revelar">\n        ' + piezas + '\n      </div>';
 }
 
-/* ── Colecciones (pósters de campaña) ──────────────────────────────────── */
+/* ── Colecciones (pósters de campaña) ──────────────────────────────────────
+   El encabezado de la sección se edita en el panel. Si por lo que sea llegara
+   vacío se usa el texto de siempre: nunca un título en blanco. */
+function textoDeColecciones() {
+  const t = CONFIG.coleccionesTexto || {};
+  return {
+    eyebrow: t.eyebrow === undefined || t.eyebrow === null ? 'Melos Caps · Hechas en Colombia' : t.eyebrow,
+    titulo: t.titulo || 'Colecciones',
+    nota: t.nota === undefined || t.nota === null ? 'Piezas de edición. Pregúntanos por la que te guste.' : t.nota,
+  };
+}
+
 function colecciones() {
   const lista = COLECCIONES || [];
   if (!lista.length) return '';
   return lista.map((c) => {
     const wa = 'https://wa.me/' + CONFIG.whatsapp.numero + '?text=' +
       encodeURIComponent(`Hola ${CONFIG.marca}, quiero información sobre la colección ${c.nombre}.`);
+    // El nombre del archivo lo escribe el dueño desde el panel: va escapado
+    // como cualquier otro dato, aunque el validador ya lo limite a letras.
+    const img = esc(c.imagen);
     return `<a class="coleccion" href="${wa}" target="_blank" rel="noopener">
           <picture>
-            <source type="image/webp" srcset="assets/img/${c.imagen}-400.webp 400w, assets/img/${c.imagen}-760.webp 760w"
+            <source type="image/webp" srcset="assets/img/${img}-400.webp 400w, assets/img/${img}-760.webp 760w"
                     sizes="(min-width: 900px) 300px, 62vw">
-            <img src="assets/img/${c.imagen}-760.jpg" alt="Colección ${esc(c.nombre)} de Melos Caps"
+            <img src="assets/img/${img}-760.jpg" alt="Colección ${esc(c.nombre)}"
                  width="600" height="760" loading="lazy" decoding="async">
           </picture>
           <span class="coleccion-txt">
@@ -557,6 +571,13 @@ function construirHome() {
       return n > 1 ? ` style="min-width:${n * 44 + (n - 1) * 6}px"` : '';
     })())
     .replace('{{DIAPOSITIVAS}}', diapositivas())
+    // La tira de colecciones y su encabezado: los tres textos se editan en
+    // el panel. Sin ninguna colección la sección entera se oculta, para no
+    // dejar un título con un carril vacío debajo.
+    .replace('{{COLECCIONES_OCULTA}}', (COLECCIONES || []).length ? '' : ' hidden')
+    .replace('{{COLECCIONES_EYEBROW}}', esc(textoDeColecciones().eyebrow))
+    .replace('{{COLECCIONES_TITULO}}', esc(textoDeColecciones().titulo))
+    .replace('{{COLECCIONES_NOTA}}', esc(textoDeColecciones().nota))
     .replace('{{COLECCIONES}}', colecciones())
     .replace('{{ENTREGAS}}', entregas())
     .replace('{{ENTREGAS_TITULO}}', fotosDeEntrega().length ? 'Entregas' : 'Míralas de cerca')

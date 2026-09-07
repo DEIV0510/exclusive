@@ -44,6 +44,14 @@ const POR_DEFECTO = {
   faq: [],
   checkout: { pedirCiudad: true, pedirDireccion: true, pedirNota: true },
   seo: { titulo: '', descripcion: '', imagen: '' },
+  /* Los tres textos que van encima de la tira de colecciones de la portada.
+     Las tarjetas en sí son filas de la tabla "colecciones"; esto es solo el
+     encabezado de la sección. */
+  coleccionesTexto: {
+    eyebrow: 'Melos Caps · Hechas en Colombia',
+    titulo: 'Colecciones',
+    nota: 'Piezas de edición. Pregúntanos por la que te guste.',
+  },
   home: { orden: ['disponibles', 'confianza', 'pasos', 'identidad', 'colecciones', 'marcas', 'entregas', 'faq'] },
 };
 
@@ -154,12 +162,12 @@ async function productoParaPanel(id) {
    mano, para no tener que tocar nada del JavaScript de la tienda. */
 async function configDeTienda() {
   const [identidad, whatsapp, redes, sitio, moneda, colores, carrusel, confianza,
-    pasos, faq, checkout, carruselSegundos, seo] = await Promise.all([
+    pasos, faq, checkout, carruselSegundos, seo, coleccionesTexto] = await Promise.all([
     leerAjuste('identidad'), leerAjuste('whatsapp'), leerAjuste('redes'),
     leerAjuste('sitio'), leerAjuste('moneda'), leerAjuste('colores'),
     leerAjuste('carrusel'), leerAjuste('confianza'), leerAjuste('pasos'),
     leerAjuste('faq'), leerAjuste('checkout'), leerAjuste('carruselSegundos'),
-    leerAjuste('seo'),
+    leerAjuste('seo'), leerAjuste('coleccionesTexto'),
   ]);
 
   const marcas = (await listarMarcas()).filter((m) => m.visible).map((m) => m.nombre);
@@ -185,6 +193,9 @@ async function configDeTienda() {
     pasos,
     faq,
     checkout,
+    // El encabezado de la tira de colecciones de la portada. Las tarjetas van
+    // aparte, en window.ECM.COLECCIONES.
+    coleccionesTexto: coleccionesTexto || estructuraClonada(POR_DEFECTO.coleccionesTexto),
     // Lo que el dueño escriba en Configuración › Buscadores
     seo,
   };

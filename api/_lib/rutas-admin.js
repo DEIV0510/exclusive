@@ -554,6 +554,11 @@ const FORMAS = {
     descripcion: V.texto(d.descripcion, { max: 165 }),
     imagen: V.textoOpcional(d.imagen, { max: 300 }),
   }),
+  coleccionesTexto: (d) => ({
+    eyebrow: V.texto(d.eyebrow, { max: 60 }),
+    titulo: V.textoObligatorio(d.titulo, 'El título de la sección', { max: 40 }),
+    nota: V.texto(d.nota, { max: 140 }),
+  }),
 };
 
 async function verAjuste(req, res, clave) {
@@ -607,6 +612,56 @@ async function borrarBanner(req, res, id) {
   await auth.exigir(req, 'contenido');
   await correr('DELETE FROM banners WHERE id = ?', [Number(id)]);
   return ok(res, { mensaje: 'Banner eliminado.' });
+}
+
+/* ═══ COLECCIONES ══════════════════════════════════════════════════════════
+   Los pósters de campaña de la portada. Cada uno es una foto grande con un
+   nombre y una nota; al tocarlo se abre WhatsApp preguntando por esa colección.
+   El orden en el panel es el orden en que salen en la tira. */
+
+async function listarColecciones(req, res) {
+  await auth.exigir(req, 'contenido');
+  return ok(res, { items: await C.listarColecciones() });
+}
+
+async function guardarColeccion(req, res, id) {
+  await auth.exigir(req, 'contenido');
+  const d = await cuerpoJson(req);
+  const campos = [
+    // Con esto se arma un src=: nada de rutas ni comillas
+    V.nombreDeFoto(d.imagen, 'La foto de la colección'),
+    V.textoObligatorio(d.nombre, 'El nombre de la colección', { max: 40 }),
+    V.texto(d.nota, { max: 90 }),
+    V.bool(d.visible),
+    V.entero(d.orden, { campo: 'El orden' }) || 0,
+  ];
+  if (id) {
+    const ya = await uno('SELECT id FROM colecciones WHERE id = ?', [Number(id)]);
+    if (!ya) return fallo(res, 404, 'Esa colección ya no existe.');
+    await correr('UPDATE colecciones SET imagen=?, nombre=?, nota=?, visible=?, orden=? WHERE id=?',
+      [...campos, Number(id)]);
+    return ok(res, { mensaje: 'Cambios guardados correctamente.' });
+  }
+  const r = await correr('INSERT INTO colecciones (imagen, nombre, nota, visible, orden) VALUES (?,?,?,?,?)', campos);
+  return ok(res, { id: Number(r.lastInsertRowid), mensaje: 'Colección creada correctamente.' });
+}
+
+async function borrarColeccion(req, res, id) {
+  await auth.exigir(req, 'borrar');
+  const r = await correr('DELETE FROM colecciones WHERE id = ?', [Number(id)]);
+  if (!r.rowsAffected) return fallo(res, 404, 'Esa colección ya no existe.');
+  return ok(res, { mensaje: 'Colección eliminada.' });
+}
+
+/* Reordenar de un golpe: llega la lista de ids en el orden nuevo. */
+async function ordenarColecciones(req, res) {
+  await auth.exigir(req, 'contenido');
+  const d = await cuerpoJson(req);
+  const ids = tope(d.ids, 40, 'colecciones').map((x) => Number(x)).filter((x) => Number.isInteger(x) && x > 0);
+  for (let i = 0; i < ids.length; i++) {
+    await correr('UPDATE colecciones SET orden = ? WHERE id = ?', [i, ids[i]]);
+  }
+  return ok(res, { mensaje: 'Orden guardado.' });
 }
 
 /* ═══ PEDIDOS ══════════════════════════════════════════════════════════════ */
@@ -769,6 +824,7 @@ module.exports = {
   marcas, tipos,
   verAjuste, guardarAjusteRuta, FORMAS,
   listarBanners, guardarBanner, borrarBanner,
+  listarColecciones, guardarColeccion, borrarColeccion, ordenarColecciones,
   listarPedidos, cambiarPedido, ESTADOS_PEDIDO,
   listarUsuarios, crearUsuario, editarUsuario, borrarUsuario,
   opciones,

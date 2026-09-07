@@ -103,6 +103,15 @@ async function despachar(req, res, rutaCruda) {
       if (metodo === 'DELETE') return A.borrarBanner(req, res, p.id);
     }
 
+    // Colecciones (los pósters de campaña de la portada)
+    if (metodo === 'GET' && m('admin/colecciones')) return A.listarColecciones(req, res);
+    if (metodo === 'POST' && m('admin/colecciones')) return A.guardarColeccion(req, res, null);
+    if (metodo === 'PUT' && m('admin/colecciones/orden')) return A.ordenarColecciones(req, res);
+    if ((p = m('admin/colecciones/:id'))) {
+      if (metodo === 'PUT') return A.guardarColeccion(req, res, p.id);
+      if (metodo === 'DELETE') return A.borrarColeccion(req, res, p.id);
+    }
+
     // Pedidos
     if (metodo === 'GET' && m('admin/pedidos')) return A.listarPedidos(req, res);
     if ((p = m('admin/pedidos/:id')) && metodo === 'PATCH') return A.cambiarPedido(req, res, p.id);
@@ -116,6 +125,7 @@ async function despachar(req, res, rutaCruda) {
     }
 
     // Imágenes
+    if (metodo === 'GET' && m('admin/imagenes')) return listarImagenes(req, res);
     if (metodo === 'POST' && m('admin/imagenes')) return subirImagen(req, res);
     if ((p = m('admin/imagenes/:base')) && metodo === 'DELETE') return quitarImagen(req, res, p.base);
 
@@ -160,6 +170,15 @@ async function estado(req, res) {
     falta,
     hora: ahora(),
   });
+}
+
+/* ── La biblioteca de fotos ──────────────────────────────────────────────────
+   Todo lo que ya está subido, para poder reutilizar una foto en el carrusel,
+   en un banner o en una colección sin volver a subirla. */
+async function listarImagenes(req, res) {
+  const auth = require('./auth');
+  await auth.exigir(req, 'contenido');
+  return ok(res, { items: await imagenes.listarBases() });
 }
 
 /* ── Subir una foto ──────────────────────────────────────────────────────── */

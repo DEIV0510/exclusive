@@ -128,6 +128,7 @@
     { id: 'destacados', titulo: 'Destacados', icono: 'i-estrella', permiso: 'productos' },
     { grupo: 'Contenido' },
     { id: 'inicio', titulo: 'Página de inicio', icono: 'i-casa', permiso: 'contenido' },
+    { id: 'colecciones', titulo: 'Colecciones', icono: 'i-estrella', permiso: 'contenido' },
     { id: 'banners', titulo: 'Banners', icono: 'i-banner', permiso: 'contenido' },
     { id: 'contacto', titulo: 'Contacto', icono: 'i-telefono', permiso: 'contenido' },
     { id: 'redes', titulo: 'Redes sociales', icono: 'i-red', permiso: 'contenido' },
@@ -444,6 +445,168 @@
       '><span>' + esc(etiqueta) + '</span></label>';
   }
 
+  /* ── Selector de foto ─────────────────────────────────────────────────────
+     Antes, fuera de Productos, las fotos se pedían escribiendo el nombre del
+     archivo a mano: una letra de más y quedaba un hueco en la portada sin que
+     nadie se enterara. Aquí se sube o se elige de las que ya están, y siempre
+     se ve la que está puesta.
+
+     Guarda el valor en un input oculto con el nombre que se le pase, así que
+     todo lo que ya leía ese campo (FormData, leerCarrusel) sigue igual. */
+  function selectorDeFoto(nombre, etiqueta, valor, o) {
+    o = o || {};
+    return '<div class="fotocampo" data-fotocampo>' +
+      '<span class="fotocampo-et">' + esc(etiqueta) + (o.requerido ? ' *' : '') + '</span>' +
+      '<div class="fotocampo-caja">' +
+      '<div class="fotocampo-vista" data-vista></div>' +
+      '<div class="fotocampo-lado">' +
+      '<div class="fotocampo-botones">' +
+      '<button type="button" class="btn btn--linea btn--sm" data-subir>Subir foto</button>' +
+      '<button type="button" class="btn btn--suave btn--sm" data-elegir>Elegir una que ya tengo</button>' +
+      (o.opcional ? '<button type="button" class="btn btn--suave btn--sm" data-quitar style="color:var(--error)">Quitar</button>' : '') +
+      '</div>' +
+      '<small class="campo-ayuda" data-nota></small>' +
+      (o.ayuda ? '<small class="campo-ayuda">' + esc(o.ayuda) + '</small>' : '') +
+      '</div></div>' +
+      '<input type="hidden" name="' + nombre + '" value="' + esc(valor || '') + '">' +
+      '<input type="file" accept="image/jpeg,image/png,image/webp" hidden data-archivo>' +
+      '</div>';
+  }
+
+  /* La lista de fotos ya disponibles. Se pide una sola vez por visita y se
+     refresca sola cuando se sube una nueva. */
+  var BIBLIOTECA = null;
+  function biblioteca(recargar) {
+    if (BIBLIOTECA && !recargar) return Promise.resolve(BIBLIOTECA);
+    return api('GET', '/imagenes').then(function (d) {
+      BIBLIOTECA = d.items || [];
+      return BIBLIOTECA;
+    });
+  }
+
+  function engancharFotos(raiz) {
+    $$('[data-fotocampo]', raiz).forEach(function (caja) {
+      // Las secciones se repintan enteras; sin esto se engancharían dos veces
+      if (caja.dataset.listo) return;
+      caja.dataset.listo = '1';
+
+      var oculto = $('input[type="hidden"]', caja);
+      var archivo = $('[data-archivo]', caja);
+      var vista = $('[data-vista]', caja);
+      var nota = $('[data-nota]', caja);
+
+      function pintar() {
+        var b = oculto.value;
+        vista.innerHTML = b
+          ? '<img src="/assets/img/' + esc(b) + '-400.webp" alt="" loading="lazy">'
+          : '<span>Sin foto</span>';
+        nota.textContent = b || 'Sube una foto o elige una de las que ya están en la tienda.';
+      }
+      pintar();
+
+      function poner(base) {
+        oculto.value = base;
+        // Que quien escuche el campo se entere: no lo escribió una persona
+        oculto.dispatchEvent(new Event('change', { bubbles: true }));
+        pintar();
+      }
+
+      $('[data-subir]', caja).addEventListener('click', function () { archivo.click(); });
+
+      archivo.addEventListener('change', function () {
+        var f = archivo.files && archivo.files[0];
+        archivo.value = '';
+        if (!f) return;
+        if (f.size > 9 * 1024 * 1024) {
+          return avisar('«' + f.name + '» pesa más de 9 MB. Súbela más liviana.', 'error');
+        }
+        var boton = $('[data-subir]', caja);
+        boton.disabled = true;
+        boton.textContent = 'Subiendo…';
+        var lector = new FileReader();
+        lector.onload = function () {
+          api('POST', '/imagenes', { datos: lector.result, nombre: f.name })
+            .then(function (d) {
+              poner(d.base);
+              if (BIBLIOTECA && BIBLIOTECA.indexOf(d.base) < 0) BIBLIOTECA.push(d.base);
+              avisar('Foto subida. Acuérdate de guardar.');
+            })
+            .catch(function (e) { if (e.message !== 'sesion') avisar(e.message, 'error'); })
+            .then(function () { boton.disabled = false; boton.textContent = 'Subir foto'; });
+        };
+        lector.onerror = function () { avisar('No pude leer «' + f.name + '».', 'error'); };
+        lector.readAsDataURL(f);
+      });
+
+      $('[data-elegir]', caja).addEventListener('click', function () {
+        elegirDeLaBiblioteca(oculto.value).then(function (base) {
+          if (base) poner(base);
+        });
+      });
+
+      var quitar = $('[data-quitar]', caja);
+      if (quitar) quitar.addEventListener('click', function () { poner(''); });
+    });
+  }
+
+  /* Rejilla con todas las fotos de la tienda para reutilizar una. */
+  function elegirDeLaBiblioteca(actual) {
+    return new Promise(function (resolver) {
+      var velo = document.createElement('div');
+      velo.className = 'velo';
+      velo.innerHTML = '<div class="dialogo dialogo--ancho" role="dialog" aria-modal="true" aria-label="Elegir una foto">' +
+        '<h2>Elegir una foto</h2>' +
+        '<p class="sub">Todas las que ya están en la tienda. Toca una para usarla.</p>' +
+        '<input type="search" class="buscador-fotos" placeholder="Buscar por nombre…" aria-label="Buscar foto">' +
+        '<div class="rejilla-fotos"><div class="cargando">Cargando…</div></div>' +
+        '<div class="dialogo-botones"><button type="button" class="btn btn--linea" data-no>Cancelar</button></div>' +
+        '</div>';
+      document.body.appendChild(velo);
+
+      function cerrar(valor) {
+        velo.remove();
+        document.removeEventListener('keydown', tecla);
+        resolver(valor);
+      }
+      function tecla(ev) { if (ev.key === 'Escape') cerrar(null); }
+      document.addEventListener('keydown', tecla);
+      $('[data-no]', velo).addEventListener('click', function () { cerrar(null); });
+      velo.addEventListener('click', function (ev) { if (ev.target === velo) cerrar(null); });
+
+      var caja = $('.rejilla-fotos', velo);
+      var buscador = $('.buscador-fotos', velo);
+
+      biblioteca().then(function (lista) {
+        function pinta() {
+          var q = buscador.value.trim().toLowerCase();
+          var vistas = lista.filter(function (b) { return !q || b.toLowerCase().indexOf(q) >= 0; });
+          if (!vistas.length) {
+            caja.innerHTML = '<div class="vacio"><h3>Ninguna foto coincide</h3>' +
+              '<p>Prueba con otra palabra o sube una nueva.</p></div>';
+            return;
+          }
+          caja.innerHTML = vistas.map(function (b) {
+            return '<button type="button" class="foto-op' + (b === actual ? ' es-actual' : '') + '" data-base="' + esc(b) + '">' +
+              // No todas las fotos tienen el tamaño más pequeño (los pósters de
+              // colección, por ejemplo): si falta, se cae al de 400.
+              '<img src="/assets/img/' + esc(b) + '-160.webp" alt="" loading="lazy"' +
+              ' onerror="this.onerror=null;this.src=\'/assets/img/' + esc(b) + '-400.webp\'">' +
+              '<span>' + esc(b) + '</span></button>';
+          }).join('');
+          $$('.foto-op', caja).forEach(function (b) {
+            b.addEventListener('click', function () { cerrar(b.dataset.base); });
+          });
+        }
+        buscador.addEventListener('input', pinta);
+        pinta();
+        buscador.focus();
+      }).catch(function (e) {
+        if (e.message === 'sesion') return cerrar(null);
+        caja.innerHTML = '<div class="vacio"><h3>No pude cargar las fotos</h3><p>' + esc(e.message) + '</p></div>';
+      });
+    });
+  }
+
   function engancharFormulario(p, fotos, esNuevo) {
     var forma = $('#f-producto');
     contadores(forma);
@@ -746,7 +909,7 @@
             '<button type="button" class="btn btn--suave btn--sm" data-quita style="color:var(--error)">Quitar</button>' +
             '</div></div>' +
             (s.imagen
-              ? campo('imagen', 'Foto de fondo', s.imagen, { max: 200, ayuda: 'Nombre del archivo en assets/img, sin el -760.webp' }) +
+              ? selectorDeFoto('imagen', 'Foto de fondo', s.imagen, { requerido: true }) +
                 '<div class="fila fila--2">' +
                 campo('posicion', 'Encuadre', s.posicion || '50% 42%', { max: 20 }) +
                 campo('difuminado', 'Desenfoque (px)', s.difuminado || 0, { tipo: 'number' }) + '</div>' +
@@ -759,6 +922,7 @@
             '</div>';
         }).join('');
         contadores($('#carrusel'));
+        engancharFotos($('#carrusel'));
         $$('#carrusel [data-dia]').forEach(function (el) {
           var i = Number(el.dataset.dia);
           $('[data-sube]', el).addEventListener('click', function () { leerCarrusel(); var x = carrusel.splice(i, 1)[0]; carrusel.splice(i - 1, 0, x); pintarCarrusel(); });
@@ -864,6 +1028,134 @@
     });
   }
 
+  /* ═══ COLECCIONES ═════════════════════════════════════════════════════════
+     La tira de pósters de la portada. Cada tarjeta es una foto grande con su
+     nombre; al tocarla el cliente abre WhatsApp preguntando por esa colección.
+     El orden de la lista es el orden en que salen. */
+  function vistaColecciones() {
+    encabezar('Colecciones', 'Contenido',
+      '<button type="button" class="btn btn--primario" id="btn-nuevo">' + icono('i-mas') + ' Nueva colección</button>');
+    cargando();
+    Promise.all([api('GET', '/colecciones'), api('GET', '/ajustes/coleccionesTexto')]).then(function (r) {
+      var lista = r[0].items;
+      var textos = r[1].valor || {};
+
+      contenido().innerHTML =
+        '<div class="tarjeta"><h2>Encabezado de la sección</h2>' +
+        '<p class="sub">Los textos que van encima de la tira, en la portada.</p>' +
+        '<form id="f-textos">' +
+        campo('eyebrow', 'Rótulo pequeño', textos.eyebrow, { max: 60 }) +
+        campo('titulo', 'Título', textos.titulo, { max: 40, requerido: true }) +
+        campo('nota', 'Frase de abajo', textos.nota, { max: 140 }) +
+        '<div style="text-align:right"><button type="submit" class="btn btn--primario">Guardar textos</button></div>' +
+        '</form></div>' +
+
+        '<div class="tarjeta"><h2>Las tarjetas</h2>' +
+        '<p class="sub">Salen en la portada en este mismo orden. Una colección oculta no se muestra en la tienda.</p>' +
+        (lista.length
+          ? '<div class="tabla-caja"><table><thead><tr><th></th><th>Nombre</th><th>Nota</th><th>Se ve</th><th>Orden</th><th></th></tr></thead><tbody>' +
+            lista.map(function (c, i) {
+              return '<tr data-id="' + c.id + '">' +
+                '<td><img class="miniatura" src="/assets/img/' + esc(c.imagen) + '-160.webp" alt="" loading="lazy"' +
+                ' onerror="this.onerror=null;this.src=\'/assets/img/' + esc(c.imagen) + '-400.webp\'"></td>' +
+                '<td data-columna="Nombre"><b>' + esc(c.nombre) + '</b></td>' +
+                '<td data-columna="Nota">' + esc(c.nota || '—') + '</td>' +
+                '<td data-columna="Se ve">' + (c.visible
+                  ? '<span class="etiqueta etiqueta--ok">Sí</span>'
+                  : '<span class="etiqueta etiqueta--gris">Oculta</span>') + '</td>' +
+                '<td data-columna="Orden" class="acciones">' +
+                '<button type="button" class="btn btn--linea btn--sm" data-sube ' + (i === 0 ? 'disabled' : '') + ' title="Subir">↑</button>' +
+                '<button type="button" class="btn btn--linea btn--sm" data-baja ' + (i === lista.length - 1 ? 'disabled' : '') + ' title="Bajar">↓</button>' +
+                '</td>' +
+                '<td class="acciones"><button type="button" class="btn btn--linea btn--sm" data-editar>Editar</button>' +
+                (puede('borrar')
+                  ? '<button type="button" class="btn btn--suave btn--sm" data-borrar style="color:var(--error)">Eliminar</button>'
+                  : '') + '</td></tr>';
+            }).join('') + '</tbody></table></div>'
+          : '<div class="vacio"><h3>Todavía no hay colecciones</h3>' +
+            '<p>Mientras no haya ninguna, esta sección no aparece en la portada.</p></div>') +
+        '</div>';
+
+      $('#f-textos').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var fd = new FormData(this);
+        intentar(api('PUT', '/ajustes/coleccionesTexto', {
+          valor: { eyebrow: fd.get('eyebrow'), titulo: fd.get('titulo'), nota: fd.get('nota') },
+        }));
+      });
+      contadores($('#f-textos'));
+
+      function abrir(c) {
+        c = c || { imagen: '', nombre: '', nota: '', visible: 1 };
+        var velo = document.createElement('div');
+        velo.className = 'velo';
+        velo.innerHTML = '<form class="dialogo" style="max-width:520px"><h2>' +
+          (c.id ? 'Editar' : 'Nueva') + ' colección</h2>' +
+          selectorDeFoto('imagen', 'Foto de la colección', c.imagen, {
+            requerido: true,
+            ayuda: 'Al subir una se recorta a cuadrado; en la tarjeta se ve la parte del centro.',
+          }) +
+          campo('nombre', 'Nombre', c.nombre, { max: 40, requerido: true }) +
+          campo('nota', 'Nota corta', c.nota, { max: 90, ayuda: 'La línea pequeña debajo del nombre.' }) +
+          interruptor('visible', 'Se muestra en la portada', !!c.visible) +
+          '<div class="dialogo-botones"><button type="button" class="btn btn--linea" data-no>Cancelar</button>' +
+          '<button type="submit" class="btn btn--primario">Guardar</button></div></form>';
+        document.body.appendChild(velo);
+        engancharFotos(velo);
+        contadores(velo);
+        $('[data-no]', velo).addEventListener('click', function () { velo.remove(); });
+        $('form', velo).addEventListener('submit', function (ev) {
+          ev.preventDefault();
+          var fd = new FormData(this);
+          if (!fd.get('imagen')) return avisar('Elige o sube una foto para la colección.', 'error');
+          var cuerpo = {
+            imagen: fd.get('imagen'), nombre: fd.get('nombre'), nota: fd.get('nota'),
+            visible: !!fd.get('visible'),
+            // Una nueva se va al final; al editar se respeta el orden que tenía
+            orden: c.id ? c.orden : lista.length,
+          };
+          intentar(c.id ? api('PUT', '/colecciones/' + c.id, cuerpo) : api('POST', '/colecciones', cuerpo))
+            .then(function () { velo.remove(); vistaColecciones(); });
+        });
+      }
+
+      function porFila(x) {
+        var id = x.closest('tr').dataset.id;
+        return lista.filter(function (c) { return String(c.id) === id; })[0];
+      }
+
+      function reordenar(desde, hasta) {
+        var ids = lista.map(function (c) { return c.id; });
+        ids.splice(hasta, 0, ids.splice(desde, 1)[0]);
+        intentar(api('PUT', '/colecciones/orden', { ids: ids })).then(vistaColecciones);
+      }
+
+      $('#btn-nuevo').addEventListener('click', function () { abrir(null); });
+      $$('[data-editar]').forEach(function (x) {
+        x.addEventListener('click', function () { abrir(porFila(x)); });
+      });
+      $$('[data-sube]').forEach(function (x, i) {
+        x.addEventListener('click', function () { reordenar(i, i - 1); });
+      });
+      $$('[data-baja]').forEach(function (x, i) {
+        x.addEventListener('click', function () { reordenar(i, i + 1); });
+      });
+      $$('[data-borrar]').forEach(function (x) {
+        x.addEventListener('click', function () {
+          var c = porFila(x);
+          confirmar({
+            titulo: '¿Eliminar «' + c.nombre + '»?',
+            texto: 'Dejará de salir en la portada. La foto no se borra: puedes volver a usarla.',
+            aceptar: 'Sí, eliminar', peligro: true,
+          }).then(function (si) {
+            if (!si) return;
+            intentar(api('DELETE', '/colecciones/' + c.id)).then(vistaColecciones);
+          });
+        });
+      });
+    }).catch(errorDeCarga);
+  }
+
   /* ═══ BANNERS ═════════════════════════════════════════════════════════ */
   function vistaBanners() {
     encabezar('Banners', 'Contenido',
@@ -891,13 +1183,15 @@
         velo.innerHTML = '<form class="dialogo" style="max-width:480px"><h2>' + (b.id ? 'Editar' : 'Nuevo') + ' banner</h2>' +
           campo('titulo', 'Título', b.titulo, { max: 80 }) +
           area('texto', 'Texto', b.texto, 200) +
-          campo('imagen', 'Imagen', b.imagen, { max: 300, ayuda: 'Nombre del archivo en assets/img.' }) +
+          selectorDeFoto('imagen', 'Imagen', b.imagen, { opcional: true }) +
           '<div class="fila fila--2">' + campo('boton', 'Texto del botón', b.boton, { max: 30 }) +
           campo('enlace', 'Enlace', b.enlace, { max: 300 }) + '</div>' +
           interruptor('activo', 'Se muestra en la tienda', !!b.activo) +
           '<div class="dialogo-botones"><button type="button" class="btn btn--linea" data-no>Cancelar</button>' +
           '<button type="submit" class="btn btn--primario">Guardar</button></div></form>';
         document.body.appendChild(velo);
+        engancharFotos(velo);
+        contadores(velo);
         $('[data-no]', velo).addEventListener('click', function () { velo.remove(); });
         $('form', velo).addEventListener('submit', function (ev) {
           ev.preventDefault();
@@ -1224,6 +1518,7 @@
       case 'marcas': return vistaTaxonomia('marcas', 'Marcas', 'logo');
       case 'destacados': return vistaDestacados();
       case 'inicio': return vistaInicio();
+      case 'colecciones': return vistaColecciones();
       case 'banners': return vistaBanners();
       case 'contacto': return vistaContacto();
       case 'redes': return vistaRedes();

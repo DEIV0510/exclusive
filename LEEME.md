@@ -21,6 +21,8 @@ panel y se ve al instante.
 | Cambiar el WhatsApp | Contacto → WhatsApp |
 | Cambiar el correo | Contacto → Datos del negocio |
 | Cambiar el carrusel de la portada | Página de inicio |
+| Cambiar las fotos de "Colecciones" | Colecciones |
+| Anunciar una promoción | Banners |
 | Ver los pedidos | Pedidos |
 | Cambiar mi contraseña | Administradores → Contraseña |
 
@@ -130,9 +132,13 @@ Aquí editas la portada sin tocar código.
 Las diapositivas que rotan arriba. Cada una puede ser:
 
 - **De producto**: eliges la gorra y el carrusel toma su foto y su enlace.
-- **De portada**: usa una foto suelta. Lleva `imagen` (el nombre del archivo),
-  `posicion` (el encuadre) y `difuminado` (cuánto se desenfoca el fondo, de 0
-  a 12; la primera está en 1).
+- **De portada**: usa una foto suelta. Lleva la **foto de fondo**, el
+  `encuadre` (qué parte de la foto se ve) y el `desenfoque` (cuánto se difumina
+  el fondo, de 0 a 12; la primera está en 1).
+
+La foto se elige con el botón **Subir foto** o **Elegir una que ya tengo**, y
+se ve al lado mientras la escoges. Ya no hay que escribir el nombre del
+archivo a mano.
 
 Los campos tienen límite de caracteres y el panel te muestra el contador, para
 que un título largo no rompa el diseño.
@@ -148,6 +154,44 @@ frecuentes también alimentan lo que Google muestra en sus resultados.
 
 **Escribe solo lo que puedas sostener.** Si cambias tus condiciones de envío o
 de pago, edítalas aquí antes de prometerlas.
+
+---
+
+## 4 bis. Colecciones
+
+La tira de pósters de la portada: va después del bloque de Medellín y antes de
+«Con las que trabajamos», más o menos a media página. Cada
+tarjeta es una foto grande con un nombre y una nota; al tocarla, el cliente
+abre WhatsApp preguntando justo por esa colección.
+
+**Colecciones → Editar** para cambiar la foto o el texto de una;
+**+ Nueva colección** para añadir; **↑ ↓** para cambiar el orden en que salen.
+
+- La foto se sube o se escoge de las que ya tiene la tienda, igual que en el
+  carrusel. Al subir una se recorta a cuadrado y en la tarjeta se ve la parte
+  del centro, así que deja lo importante en el medio.
+- **Se muestra en la portada** apagado deja la colección guardada pero fuera
+  de la tienda.
+- Arriba de la lista se editan los tres textos del encabezado: el rótulo
+  pequeño, el título grande y la frase de abajo.
+
+Si borras todas las colecciones, **la sección entera desaparece de la
+portada**: no queda un título con un hueco debajo.
+
+---
+
+## 4 ter. Banners
+
+Son las tarjetas de promoción que salen **entre el carrusel de arriba y
+«La selección»**, o sea lo primero que ve el cliente después de la portada.
+Cada una lleva foto, título, texto y un botón con su enlace.
+
+Están pensados para algo puntual: un 2x1, un envío gratis esta semana, una
+gorra que acaba de llegar. **Si no hay ninguno activo, la sección no existe**,
+así que la portada no cambia mientras no los uses.
+
+El interruptor **Se muestra en la tienda** te deja dejarlos listos y
+encenderlos cuando toque, sin volver a escribirlos.
 
 ---
 
