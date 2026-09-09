@@ -637,6 +637,9 @@ async function guardarColeccion(req, res, id) {
   if (orden === null) {
     const f = await uno('SELECT MAX(orden) AS tope FROM colecciones');
     orden = f && f.tope !== null && f.tope !== undefined ? Number(f.tope) + 1 : 0;
+    // Sin este tope se podría guardar un orden que luego el propio validador
+    // rechaza al editar, y esa colección se quedaría sin poder tocarse.
+    orden = Math.min(Math.max(0, orden), 1000000);
   }
   const campos = [
     // Con esto se arma un src=: nada de rutas ni comillas

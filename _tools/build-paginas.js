@@ -725,11 +725,14 @@ function construirProducto(p) {
     : `<button type="button" class="btn btn--primario btn--sm" id="cs-agregar">Agregar</button>`;
 
   const cuerpo = leer('cuerpo-producto.html')
-    .replace(/\{\{NOMBRE\}\}/g, esc(p.nombre))
-    .replace(/\{\{MARCA_URL\}\}/g, encodeURIComponent(p.marca))
-    .replace(/\{\{MARCA\}\}/g, esc(p.marca))
-    .replace(/\{\{IMG0\}\}/g, fotoDe(p))
-    .replace(/\{\{ALT0\}\}/g, esc(altDe(p, 0)))
+    // Estos cinco salen varias veces en la plantilla, por eso van con /g. Y
+    // también con lit(): son los que llevan el nombre y la marca que escribe
+    // el dueño, justo los más expuestos a un dólar suelto.
+    .replace(/\{\{NOMBRE\}\}/g, lit(esc(p.nombre)))
+    .replace(/\{\{MARCA_URL\}\}/g, lit(encodeURIComponent(p.marca)))
+    .replace(/\{\{MARCA\}\}/g, lit(esc(p.marca)))
+    .replace(/\{\{IMG0\}\}/g, lit(fotoDe(p)))
+    .replace(/\{\{ALT0\}\}/g, lit(esc(altDe(p, 0))))
     .replace('{{INSIGNIAS}}', lit(insignias.length ? `<div class="insignias">${insignias.join('')}</div>` : '<div class="insignias"></div>'))
     .replace('{{MINIATURAS}}', lit(miniaturas))
     .replace('{{PRECIO}}', lit(precio))

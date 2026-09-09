@@ -949,9 +949,12 @@
         engancharFotos($('#carrusel'));
         $$('#carrusel [data-dia]').forEach(function (el) {
           var i = Number(el.dataset.dia);
-          $('[data-sube]', el).addEventListener('click', function () { leerCarrusel(); var x = carrusel.splice(i, 1)[0]; carrusel.splice(i - 1, 0, x); pintarCarrusel(); });
-          $('[data-baja]', el).addEventListener('click', function () { leerCarrusel(); var x = carrusel.splice(i, 1)[0]; carrusel.splice(i + 1, 0, x); pintarCarrusel(); });
-          $('[data-quita]', el).addEventListener('click', function () { leerCarrusel(); carrusel.splice(i, 1); pintarCarrusel(); });
+          // Mover o quitar vuelve a dibujar las diapositivas, y eso deja
+          // huérfana una foto que estuviera subiendo: acababa entrando la
+          // anterior sin que se notara. Mejor esperar a que termine.
+          $('[data-sube]', el).addEventListener('click', function () { if (hayFotoSubiendo()) return; leerCarrusel(); var x = carrusel.splice(i, 1)[0]; carrusel.splice(i - 1, 0, x); pintarCarrusel(); });
+          $('[data-baja]', el).addEventListener('click', function () { if (hayFotoSubiendo()) return; leerCarrusel(); var x = carrusel.splice(i, 1)[0]; carrusel.splice(i + 1, 0, x); pintarCarrusel(); });
+          $('[data-quita]', el).addEventListener('click', function () { if (hayFotoSubiendo()) return; leerCarrusel(); carrusel.splice(i, 1); pintarCarrusel(); });
         });
       }
 
@@ -966,6 +969,7 @@
       }
 
       $('#add-dia').addEventListener('click', function () {
+        if (hayFotoSubiendo()) return;
         leerCarrusel();
         carrusel.push({ producto: (OPCIONES.productos[0] || {}).slug || '', titulo: '', cta: 'Comprar ahora' });
         pintarCarrusel();

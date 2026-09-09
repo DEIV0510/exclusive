@@ -172,8 +172,12 @@ async function servirImagen(req, res, archivo) {
    tienda tienen. Se ve un pelo menos nítida en una pantalla grande; se ve. */
 function sinEseTamano(res, archivo) {
   const m = String(archivo).match(/^(.+)-(\d+)\.(webp|jpg)$/);
-  // Solo se redirige hacia el 760, nunca desde él: así no hay vuelta atrás
-  if (m && Number(m[2]) !== 760) {
+  /* Solo se redirige hacia el 760, nunca desde él (así no hay vuelta atrás), y
+     solo si el nombre es de los que acepta el validador de fotos: letras,
+     números, guiones y puntos. Con un nombre raro (un emoji, un carácter
+     cirílico, un salto de línea) setHeader lanza y la petición entera se caía
+     con la página de "Volvemos enseguida" en vez de un 404 limpio. */
+  if (m && Number(m[2]) !== 760 && /^[A-Za-z0-9._~-]+$/.test(m[1])) {
     res.statusCode = 302;
     res.setHeader('Location', '/assets/img/' + m[1] + '-760.' + m[3]);
     res.setHeader('Cache-Control', 'public, max-age=3600');
