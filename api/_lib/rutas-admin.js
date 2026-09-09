@@ -627,13 +627,24 @@ async function listarColecciones(req, res) {
 async function guardarColeccion(req, res, id) {
   await auth.exigir(req, 'contenido');
   const d = await cuerpoJson(req);
+  /* Sin orden dicho a propósito, la colección se va AL FINAL de la tira.
+     Contar cuántas hay no sirve: al borrar una del medio quedan huecos en la
+     numeración y la nueva aparecía en mitad de la portada. Se mira el mayor
+     orden que haya y se suma uno. */
+  let orden = d.orden === undefined || d.orden === null || d.orden === ''
+    ? null
+    : V.entero(d.orden, { campo: 'El orden' });
+  if (orden === null) {
+    const f = await uno('SELECT MAX(orden) AS tope FROM colecciones');
+    orden = f && f.tope !== null && f.tope !== undefined ? Number(f.tope) + 1 : 0;
+  }
   const campos = [
     // Con esto se arma un src=: nada de rutas ni comillas
     V.nombreDeFoto(d.imagen, 'La foto de la colección'),
     V.textoObligatorio(d.nombre, 'El nombre de la colección', { max: 40 }),
     V.texto(d.nota, { max: 90 }),
     V.bool(d.visible),
-    V.entero(d.orden, { campo: 'El orden' }) || 0,
+    orden,
   ];
   if (id) {
     const ya = await uno('SELECT id FROM colecciones WHERE id = ?', [Number(id)]);

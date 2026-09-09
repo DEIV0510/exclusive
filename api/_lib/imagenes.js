@@ -134,7 +134,15 @@ async function resolver(archivo) {
   const m = String(archivo).match(/^(.+)-(\d+)\.(webp|jpg)$/);
   if (!m) return null;
   const fila = await uno('SELECT url FROM archivos WHERE base = ? AND ancho = ? AND tipo = ?', [m[1], Number(m[2]), m[3]]);
-  return fila ? fila.url : null;
+  if (fila) return fila.url;
+  /* Ese tamaño exacto no está, pero puede que la foto sí: si una subida quedó
+     a medias, mejor servir el ancho más parecido que dejar el hueco vacío (un
+     <source srcset> que falla no cae al <img> de respaldo). */
+  const cerca = await uno(
+    'SELECT url FROM archivos WHERE base = ? AND tipo = ? ORDER BY ABS(ancho - ?) LIMIT 1',
+    [m[1], m[3], Number(m[2])]
+  );
+  return cerca ? cerca.url : null;
 }
 
 /* Las miniaturas borrosas, para que la tienda no salte al cargar */

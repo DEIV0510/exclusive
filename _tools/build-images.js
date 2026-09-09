@@ -292,7 +292,9 @@ async function procesarFoto(job) {
 async function procesarPoster(job) {
   const buf = await sharp(path.join(SRC, job.src)).removeAlpha().png().toBuffer();
   const m = await sharp(buf).metadata();
-  for (const w of [400, 760]) {
+  // El de 160 es la miniatura que enseña el panel en su galería de fotos.
+  // Sin él, la rejilla del selector tenía que tirar del de 400 para cada una.
+  for (const w of [160, 400, 760]) {
     await sharp(buf).resize({ width: w, kernel: 'lanczos3' })
       .webp({ quality: 82, effort: 6 })
       .toFile(path.join(OUT, `${job.out}-${w}.webp`));

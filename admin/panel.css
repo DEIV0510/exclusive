@@ -457,8 +457,9 @@ td.acciones .btn { margin-left: 4px; }
 .fotocampo-botones { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
 .fotocampo .campo-ayuda { display: block; overflow-wrap: anywhere; }
 
-/* ── Biblioteca de fotos ─────────────────────────────────────────────────── */
-.dialogo--ancho { max-width: 720px; }
+/* ── Biblioteca de fotos ───────────────────────────────────────────────────
+   (.dialogo--ancho vive más abajo, junto a .dialogo: si se declara aquí, la
+   regla de .dialogo la pisa por venir después con la misma especificidad.) */
 .buscador-fotos {
   width: 100%;
   margin: 10px 0;
@@ -509,8 +510,13 @@ td.acciones .btn { margin-left: 4px; }
   z-index: 100;
   background: rgba(16, 26, 46, .5);
   display: grid;
-  place-items: center;
+  /* "safe center": centrado mientras quepa, y pegado arriba cuando no. Sin
+     esto, un formulario más alto que la pantalla del celular se desborda por
+     los dos lados y los botones Guardar/Cancelar quedan fuera de alcance. */
+  place-items: safe center;
   padding: 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .dialogo {
   width: 100%;
@@ -519,10 +525,17 @@ td.acciones .btn { margin-left: 4px; }
   border-radius: var(--r);
   box-shadow: var(--sombra-alta);
   padding: 22px;
+  /* margin:auto rescata el centrado en los navegadores que no entienden
+     "safe center", sin volver a recortar el diálogo alto */
+  margin: auto;
 }
 .dialogo h2 { font-size: 17px; margin-bottom: 8px; }
 .dialogo p { color: var(--tx-2); font-size: 14px; }
 .dialogo-botones { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+/* Va DESPUÉS de .dialogo a propósito: las dos reglas tienen la misma
+   especificidad, así que la última es la que manda. Estando antes, la galería
+   de fotos se quedaba en 420 px y con tres columnas. */
+.dialogo--ancho { max-width: 720px; }
 
 /* ── Mensajes flotantes ──────────────────────────────────────────────────── */
 .mensajes {

@@ -142,11 +142,7 @@ async function servirPagina(req, res, camino) {
 
 async function servirImagen(req, res, archivo) {
   const destino = await imagenes.resolver(archivo);
-  if (!destino) {
-    res.statusCode = 404;
-    res.setHeader('Cache-Control', 'no-store');
-    return res.end('No encontrada');
-  }
+  if (!destino) return sinEseTamano(res, archivo);
   if (/^https?:\/\//.test(destino)) {
     res.statusCode = 302;
     res.setHeader('Location', destino);
@@ -155,14 +151,37 @@ async function servirImagen(req, res, archivo) {
   }
   // En el computador el archivo sí está en disco
   const p = path.join(RAIZ, destino);
-  if (!fs.existsSync(p)) {
-    res.statusCode = 404;
-    return res.end('No encontrada');
-  }
+  if (!fs.existsSync(p)) return sinEseTamano(res, archivo);
   res.statusCode = 200;
   res.setHeader('Content-Type', destino.endsWith('.jpg') ? 'image/jpeg' : 'image/webp');
   res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
   res.end(fs.readFileSync(p));
+}
+
+/* Un tamaño que falta NO puede quedarse en un 404.
+
+   Las fotos se piden con <picture><source srcset="...-400 400w, ...-760 760w,
+   ...-1200 1200w">. Si el navegador elige un candidato del srcset y ese
+   archivo no está, NO cae al <img src> de respaldo: deja el hueco vacío. Con
+   la portada eso significa una pantalla en blanco.
+
+   Puede pasar de verdad: los diez pósters de colección se generaron solo en
+   400 y 760, y desde que el panel deja elegir foto de una galería, el dueño
+   puede poner uno de fondo del carrusel sin enterarse de que le falta el
+   tamaño grande. En vez de romper, se sirve el 760, que TODAS las fotos de la
+   tienda tienen. Se ve un pelo menos nítida en una pantalla grande; se ve. */
+function sinEseTamano(res, archivo) {
+  const m = String(archivo).match(/^(.+)-(\d+)\.(webp|jpg)$/);
+  // Solo se redirige hacia el 760, nunca desde él: así no hay vuelta atrás
+  if (m && Number(m[2]) !== 760) {
+    res.statusCode = 302;
+    res.setHeader('Location', '/assets/img/' + m[1] + '-760.' + m[3]);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.end();
+  }
+  res.statusCode = 404;
+  res.setHeader('Cache-Control', 'no-store');
+  return res.end('No encontrada');
 }
 
 /* ── Puerta del panel ────────────────────────────────────────────────────────

@@ -54,6 +54,17 @@ const ENTREGAS = datos.entregas || null;
 const BASE = String(CONFIG.sitio.url).replace(/\/+$/, '');
 
 /* ── Utilidades ────────────────────────────────────────────────────────── */
+
+/* Reemplazo LITERAL de marcadores.
+
+   String.replace no copia el texto de reemplazo tal cual: dentro de él, el
+   signo del dólar seguido de &, de acento grave, de comilla simple o de otro
+   dólar son órdenes. Y ese texto lo escribe el dueño desde el panel, así que
+   un producto llamado "2x1, el segundo al 50%" con un dólar y un & delante
+   imprimía el marcador crudo en mitad de la página.
+
+   Una FUNCIÓN de reemplazo no interpreta nada: se inserta lo que devuelve. */
+const lit = (valor) => () => (valor === null || valor === undefined ? '' : String(valor));
 const leer = (f) => fs.readFileSync(path.join(PLANTILLA, f), 'utf8');
 const esc = (t) => String(t == null ? '' : t)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -304,8 +315,8 @@ function jsonldProducto(p) {
 function documento({ head, pagina, cuerpo, atributosBody = '', scripts }) {
   const iconos = leer('iconos.html');
   const header = leer('header.html')
-    .replace('{{NAV_HOME}}', pagina === 'home' ? ' aria-current="page"' : '')
-    .replace('{{NAV_CATALOGO}}', pagina === 'catalogo' ? ' aria-current="page"' : '');
+    .replace('{{NAV_HOME}}', lit(pagina === 'home' ? ' aria-current="page"' : ''))
+    .replace('{{NAV_CATALOGO}}', lit(pagina === 'catalogo' ? ' aria-current="page"' : ''));
   // La fila del correo se escribe aquí, no con JavaScript: si se pintara
   // después de cargar, el pie daría un salto (mal CLS).
   const correo = CONFIG.correo
@@ -318,9 +329,9 @@ function documento({ head, pagina, cuerpo, atributosBody = '', scripts }) {
 `
     : '';
   const pie = leer('pie.html')
-    .replace('{{CORREO}}', correo)
-    .replace('{{BARRA_HOME}}', pagina === 'home' ? ' aria-current="page"' : '')
-    .replace('{{BARRA_CATALOGO}}', pagina === 'catalogo' ? ' aria-current="page"' : '');
+    .replace('{{CORREO}}', lit(correo))
+    .replace('{{BARRA_HOME}}', lit(pagina === 'home' ? ' aria-current="page"' : ''))
+    .replace('{{BARRA_CATALOGO}}', lit(pagina === 'catalogo' ? ' aria-current="page"' : ''));
 
   return `<!DOCTYPE html>
 <html lang="es-CO">
@@ -560,30 +571,30 @@ function construirHome() {
         </details>`).join('\n        ');
 
   const cuerpo = leer('cuerpo-home.html')
-    .replace('{{BANNERS}}', banners())
-    .replace('{{FAQ}}', faq)
-    .replace('{{H1}}', esc(`${CONFIG.marca} — gorras nacionales e importadas en ${CONFIG.ciudad}`))
+    .replace('{{BANNERS}}', lit(banners()))
+    .replace('{{FAQ}}', lit(faq))
+    .replace('{{H1}}', lit(esc(`${CONFIG.marca} — gorras nacionales e importadas en ${CONFIG.ciudad}`)))
     // Los puntos los crea el JavaScript. Sin reservarles el ancho, al
     // aparecer empujan las flechas de los lados y eso cuenta como salto de
     // maquetación. Cada punto mide 44 px y llevan 6 px de separación.
-    .replace('{{PUNTOS_ANCHO}}', (() => {
+    .replace('{{PUNTOS_ANCHO}}', lit((() => {
       const n = slidesDeConfig().length;
       return n > 1 ? ` style="min-width:${n * 44 + (n - 1) * 6}px"` : '';
-    })())
-    .replace('{{DIAPOSITIVAS}}', diapositivas())
+    })()))
+    .replace('{{DIAPOSITIVAS}}', lit(diapositivas()))
     // La tira de colecciones y su encabezado: los tres textos se editan en
     // el panel. Sin ninguna colección la sección entera se oculta, para no
     // dejar un título con un carril vacío debajo.
-    .replace('{{COLECCIONES_OCULTA}}', (COLECCIONES || []).length ? '' : ' hidden')
-    .replace('{{COLECCIONES_EYEBROW}}', esc(textoDeColecciones().eyebrow))
-    .replace('{{COLECCIONES_TITULO}}', esc(textoDeColecciones().titulo))
-    .replace('{{COLECCIONES_NOTA}}', esc(textoDeColecciones().nota))
-    .replace('{{COLECCIONES}}', colecciones())
-    .replace('{{ENTREGAS}}', entregas())
-    .replace('{{ENTREGAS_TITULO}}', fotosDeEntrega().length ? 'Entregas' : 'Míralas de cerca')
-    .replace('{{ENTREGAS_NOTA}}', fotosDeEntrega().length
+    .replace('{{COLECCIONES_OCULTA}}', lit((COLECCIONES || []).length ? '' : ' hidden'))
+    .replace('{{COLECCIONES_EYEBROW}}', lit(esc(textoDeColecciones().eyebrow)))
+    .replace('{{COLECCIONES_TITULO}}', lit(esc(textoDeColecciones().titulo)))
+    .replace('{{COLECCIONES_NOTA}}', lit(esc(textoDeColecciones().nota)))
+    .replace('{{COLECCIONES}}', lit(colecciones()))
+    .replace('{{ENTREGAS}}', lit(entregas()))
+    .replace('{{ENTREGAS_TITULO}}', lit(fotosDeEntrega().length ? 'Entregas' : 'Míralas de cerca'))
+    .replace('{{ENTREGAS_NOTA}}', lit(fotosDeEntrega().length
       ? 'Gorras que ya salieron para su dueño.'
-      : 'Publicamos cada gorra que sale para su dueño.');
+      : 'Publicamos cada gorra que sale para su dueño.'));
 
   // Se precarga la foto de la PRIMERA diapositiva: es el elemento más grande
   // de la pantalla inicial y marca el tiempo de carga percibido.
@@ -621,7 +632,7 @@ function construirCatalogo() {
     `<p class="card-consultar">${tienePrecio(p) ? precioTexto(p.precio) : 'Precio por WhatsApp'}</p>` +
     `</div></a></article>`).join('') + '</noscript>';
 
-  const cuerpo = leer('cuerpo-catalogo.html').replace('{{NOSCRIPT_LISTA}}', noscript);
+  const cuerpo = leer('cuerpo-catalogo.html').replace('{{NOSCRIPT_LISTA}}', lit(noscript));
 
   const primera = PRODUCTOS[0];
   const precargaCat = primera ? `<link rel="preload" as="image" fetchpriority="high"
@@ -719,20 +730,20 @@ function construirProducto(p) {
     .replace(/\{\{MARCA\}\}/g, esc(p.marca))
     .replace(/\{\{IMG0\}\}/g, fotoDe(p))
     .replace(/\{\{ALT0\}\}/g, esc(altDe(p, 0)))
-    .replace('{{INSIGNIAS}}', insignias.length ? `<div class="insignias">${insignias.join('')}</div>` : '<div class="insignias"></div>')
-    .replace('{{MINIATURAS}}', miniaturas)
-    .replace('{{PRECIO}}', precio)
-    .replace('{{PRECIO_CORTO}}', esc(precioCorto))
-    .replace('{{DESCRIPCION}}', esc(p.descripcion))
-    .replace('{{TIPO}}', esc(p.tipo))
-    .replace('{{MODELO}}', esc(p.modelo || '—'))
-    .replace('{{TALLA}}', esc(p.talla))
-    .replace('{{ESTADO_CLASE}}', agotado ? 'no' : 'si')
-    .replace('{{ESTADO}}', agotado ? 'Agotado' : 'Disponible')
-    .replace('{{COLORES}}', colores)
-    .replace('{{CARACTERISTICAS}}', caracteristicas)
-    .replace('{{COMPRA}}', compra)
-    .replace('{{STICKY_BOTON}}', stickyBoton);
+    .replace('{{INSIGNIAS}}', lit(insignias.length ? `<div class="insignias">${insignias.join('')}</div>` : '<div class="insignias"></div>'))
+    .replace('{{MINIATURAS}}', lit(miniaturas))
+    .replace('{{PRECIO}}', lit(precio))
+    .replace('{{PRECIO_CORTO}}', lit(esc(precioCorto)))
+    .replace('{{DESCRIPCION}}', lit(esc(p.descripcion)))
+    .replace('{{TIPO}}', lit(esc(p.tipo)))
+    .replace('{{MODELO}}', lit(esc(p.modelo || '—')))
+    .replace('{{TALLA}}', lit(esc(p.talla)))
+    .replace('{{ESTADO_CLASE}}', lit(agotado ? 'no' : 'si'))
+    .replace('{{ESTADO}}', lit(agotado ? 'Agotado' : 'Disponible'))
+    .replace('{{COLORES}}', lit(colores))
+    .replace('{{CARACTERISTICAS}}', lit(caracteristicas))
+    .replace('{{COMPRA}}', lit(compra))
+    .replace('{{STICKY_BOTON}}', lit(stickyBoton));
 
   const precarga = `<link rel="preload" as="image" fetchpriority="high"
       href="assets/img/${fotoDe(p)}-760.webp"

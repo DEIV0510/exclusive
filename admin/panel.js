@@ -473,15 +473,24 @@
       '</div>';
   }
 
-  /* La lista de fotos ya disponibles. Se pide una sola vez por visita y se
-     refresca sola cuando se sube una nueva. */
-  var BIBLIOTECA = null;
-  function biblioteca(recargar) {
-    if (BIBLIOTECA && !recargar) return Promise.resolve(BIBLIOTECA);
-    return api('GET', '/imagenes').then(function (d) {
-      BIBLIOTECA = d.items || [];
-      return BIBLIOTECA;
-    });
+  /* La lista de fotos ya disponibles. Se pide CADA VEZ que se abre la galería:
+     guardarla en memoria hacía que las fotos subidas desde Productos no
+     aparecieran hasta recargar la página entera, y el dueño no tiene por qué
+     saber que hay que hacer eso. Es una consulta pequeña y se abre poco. */
+  function biblioteca() {
+    return api('GET', '/imagenes').then(function (d) { return d.items || []; });
+  }
+
+  /* Cuántas fotos se están subiendo ahora mismo. Guardar en mitad de una
+     subida escribía el nombre de la foto ANTERIOR y encima decía que todo
+     había salido bien; los tres sitios que guardan consultan esto antes. */
+  var subiendoFotos = 0;
+  function hayFotoSubiendo() {
+    if (subiendoFotos > 0) {
+      avisar('Espera a que termine de subir la foto.', 'error');
+      return true;
+    }
+    return false;
   }
 
   function engancharFotos(raiz) {
@@ -521,20 +530,35 @@
           return avisar('«' + f.name + '» pesa más de 9 MB. Súbela más liviana.', 'error');
         }
         var boton = $('[data-subir]', caja);
+        subiendoFotos++;
         boton.disabled = true;
         boton.textContent = 'Subiendo…';
+        // Un solo sitio para devolver el botón a su estado: si esto se hace
+        // solo en el camino bueno, un error de lectura lo deja «Subiendo…»
+        // para siempre y ya no se puede reintentar.
+        var terminado = false;
+        function terminar() {
+          if (terminado) return;
+          terminado = true;
+          subiendoFotos--;
+          boton.disabled = false;
+          boton.textContent = 'Subir foto';
+        }
         var lector = new FileReader();
         lector.onload = function () {
           api('POST', '/imagenes', { datos: lector.result, nombre: f.name })
             .then(function (d) {
               poner(d.base);
-              if (BIBLIOTECA && BIBLIOTECA.indexOf(d.base) < 0) BIBLIOTECA.push(d.base);
               avisar('Foto subida. Acuérdate de guardar.');
             })
             .catch(function (e) { if (e.message !== 'sesion') avisar(e.message, 'error'); })
-            .then(function () { boton.disabled = false; boton.textContent = 'Subir foto'; });
+            .then(terminar);
         };
-        lector.onerror = function () { avisar('No pude leer «' + f.name + '».', 'error'); };
+        lector.onerror = function () {
+          avisar('No pude leer «' + f.name + '». Inténtalo otra vez.', 'error');
+          terminar();
+        };
+        lector.onabort = terminar;
         lector.readAsDataURL(f);
       });
 
@@ -948,6 +972,7 @@
       });
 
       $('#g-carrusel').addEventListener('click', function () {
+        if (hayFotoSubiendo()) return;
         leerCarrusel();
         var boton = this;
         boton.disabled = true;
@@ -1106,14 +1131,17 @@
         $('[data-no]', velo).addEventListener('click', function () { velo.remove(); });
         $('form', velo).addEventListener('submit', function (ev) {
           ev.preventDefault();
+          if (hayFotoSubiendo()) return;
           var fd = new FormData(this);
           if (!fd.get('imagen')) return avisar('Elige o sube una foto para la colección.', 'error');
           var cuerpo = {
             imagen: fd.get('imagen'), nombre: fd.get('nombre'), nota: fd.get('nota'),
             visible: !!fd.get('visible'),
-            // Una nueva se va al final; al editar se respeta el orden que tenía
-            orden: c.id ? c.orden : lista.length,
           };
+          // Al editar se respeta el orden que tenía. Al crear NO se manda
+          // ninguno: el servidor la pone al final de verdad, aunque antes se
+          // hayan borrado colecciones y la numeración tenga huecos.
+          if (c.id) cuerpo.orden = c.orden;
           intentar(c.id ? api('PUT', '/colecciones/' + c.id, cuerpo) : api('POST', '/colecciones', cuerpo))
             .then(function () { velo.remove(); vistaColecciones(); });
         });
@@ -1195,6 +1223,7 @@
         $('[data-no]', velo).addEventListener('click', function () { velo.remove(); });
         $('form', velo).addEventListener('submit', function (ev) {
           ev.preventDefault();
+          if (hayFotoSubiendo()) return;
           var fd = new FormData(this);
           var cuerpo = {
             titulo: fd.get('titulo'), texto: fd.get('texto'), imagen: fd.get('imagen'),
