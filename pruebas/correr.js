@@ -318,6 +318,16 @@ const { grupo, prueba, debe, resumen, tiendaDePruebas, RAIZ } = require('./ayuda
       debe.ser(conOg.estado, 200, 'la de una gorra de la semilla sí existe');
     });
 
+    await prueba('ninguna página se pide a sí misma como si fuera una foto', async () => {
+      // Un <img src=""> hace que el navegador descargue la página entera otra
+      // vez. Estaba en la ficha de cada gorra, en el visor de la foto ampliada.
+      const datos = (await t.pedir('GET', '/js/datos.js')).texto;
+      const slug = [...datos.matchAll(/"slug": "([^"]+)"/g)].map((m) => m[1])[0];
+      for (const ruta of ['/', '/catalogo.html', '/gorra-' + slug + '.html']) {
+        debe.noContener((await t.pedir('GET', ruta)).texto, 'src=""', ruta);
+      }
+    });
+
     await prueba('todas las fotos que pide la portada existen', async () => {
       const home = (await t.pedir('GET', '/')).texto;
       const urls = [...new Set([...home.matchAll(/assets\/img\/([A-Za-z0-9_-]+-\d+\.(?:webp|jpg))/g)].map((m) => m[1]))];

@@ -85,5 +85,9 @@
   <button type="button" class="icono-btn lightbox-cerrar" id="lightbox-cerrar" aria-label="Cerrar la foto ampliada">
     <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-cerrar"></use></svg>
   </button>
-  <img id="lightbox-img" src="" alt="">
+  <!-- Sin atributo src, y NO con uno vacío: un src vacío hace que el navegador
+       se pida a sí misma la página como si fuera una imagen. Era una descarga
+       entera de más en cada ficha, y además contaba como imagen rota. El
+       JavaScript le pone la foto de verdad al abrir el zoom. -->
+  <img id="lightbox-img" alt="">
 </div>
