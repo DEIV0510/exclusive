@@ -1007,7 +1007,14 @@
           // Cambiar de tipo cambia los campos, así que hay que redibujar. Lo
           // que se escribió (título, rótulo, frase, botón) se conserva.
           $('[name="tipo"]', el).addEventListener('change', function () {
-            if (hayFotoSubiendo()) { pintarCarrusel(); return; }
+            /* Redibujar aquí en mitad de una subida era lo peor de los dos
+               mundos: se perdía todo lo tecleado en las cuatro diapositivas
+               (pintarCarrusel repinta desde el array, y el array solo se
+               actualiza en leerCarrusel) y la foto que venía en camino se
+               quedaba huérfana, con el visto verde de "Foto subida" y la
+               diapositiva diciendo "Sin foto". Se devuelve el desplegable a su
+               sitio y ya: no se toca nada más. */
+            if (hayFotoSubiendo()) { this.value = tipoDe(carrusel[i]); return; }
             leerCarrusel();
             cambiarTipo(carrusel[i], this.value);
             pintarCarrusel();
@@ -1028,23 +1035,39 @@
          tipos se distinguen por si hay imagen, así que hay que dejar limpio lo
          del tipo que se abandona: una imagen olvidada mandaría sobre el
          producto y la diapositiva no haría lo que dice el desplegable. */
+      var CAMPOS = {
+        foto: ['imagen', 'posicion', 'difuminado', 'enlace'],
+        producto: ['producto'],
+      };
+
       function cambiarTipo(s, tipo) {
+        if (tipoDe(s) === tipo) return;
+
+        /* Lo del tipo que se deja NO se tira: se aparta en un cajón del panel
+           (los campos con guion bajo no se guardan). Antes se borraba, y un
+           ida y vuelta por el desplegable — mirar qué ofrece la otra opción y
+           arrepentirse — cambiaba la gorra de la diapositiva por la primera
+           del catálogo, o le borraba a la portada el encuadre "50% 3%" que se
+           había ajustado a mano. Y eso último sí se guardaba. */
+        var cajon = '_' + tipoDe(s);
+        s[cajon] = s[cajon] || {};
+        CAMPOS[tipoDe(s)].forEach(function (c) {
+          if (s[c] !== undefined) s[cajon][c] = s[c];
+        });
+
+        CAMPOS.foto.concat(CAMPOS.producto).forEach(function (c) { delete s[c]; });
         s._tipo = tipo;
+
+        var vuelve = s['_' + tipo] || {};
         if (tipo === 'foto') {
-          delete s.producto;
-          if (!s.imagen) s.imagen = '';
-          if (!s.posicion) s.posicion = '50% 42%';
-          if (s.difuminado === undefined) s.difuminado = 0;
-          if (!s.enlace) s.enlace = 'catalogo.html';
-          if (s.cta === 'Comprar ahora') s.cta = 'Ver el catálogo';
+          s.imagen = vuelve.imagen || '';
+          s.posicion = vuelve.posicion || '50% 42%';
+          s.difuminado = vuelve.difuminado === undefined ? 0 : vuelve.difuminado;
+          s.enlace = vuelve.enlace || 'catalogo.html';
         } else {
-          delete s.imagen;
-          delete s.posicion;
-          delete s.difuminado;
-          delete s.enlace;
-          if (!s.producto) s.producto = (OPCIONES.productos[0] || {}).slug || '';
-          if (s.cta === 'Ver el catálogo') s.cta = 'Comprar ahora';
+          s.producto = vuelve.producto || (OPCIONES.productos[0] || {}).slug || '';
         }
+        // El texto del botón NO se toca: lo escribe el dueño y está a la vista.
       }
 
       function leerCarrusel() {
@@ -1072,7 +1095,7 @@
            el servidor la toma por una de producto y contesta que falta el
            producto, que no es lo que el dueño ve en pantalla. */
         var sinFoto = [];
-        carrusel.forEach(function (s, i) { if (!s.producto && !s.imagen) sinFoto.push(i + 1); });
+        carrusel.forEach(function (s, i) { if (tipoDe(s) === 'foto' && !s.imagen) sinFoto.push(i + 1); });
         if (sinFoto.length) {
           return avisar(sinFoto.length === 1
             ? 'Falta la foto de fondo de la diapositiva ' + sinFoto[0] + '.'
@@ -1084,12 +1107,13 @@
         // Un solo aviso y SOLO si las dos cosas se guardaron de verdad: antes
         // salía el visto verde del primer guardado aunque el segundo fallara.
         api('PUT', '/ajustes/carruselSegundos', { valor: Number($('#segundos').value) || 0 })
-          // Se manda sin _tipo: eso es cosa del panel, no de la tienda
+          // Lo que empieza por guion bajo es cosa del panel (el tipo mientras
+          // se edita y el cajón del tipo que se dejó): no sale de aquí.
           .then(function () {
             return api('PUT', '/ajustes/carrusel', {
               valor: carrusel.map(function (s) {
                 var copia = {};
-                Object.keys(s).forEach(function (k) { if (k !== '_tipo') copia[k] = s[k]; });
+                Object.keys(s).forEach(function (k) { if (k.charAt(0) !== '_') copia[k] = s[k]; });
                 return copia;
               }),
             });
