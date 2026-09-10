@@ -81,11 +81,18 @@ function paginaDeCaida(res) {
    una lectura calculada al vuelo no se incluye en el despliegue. */
 const fs = require('fs');
 const path = require('path');
-/* Los dos HTML del panel viven FUERA de admin/ a propósito: cualquier cosa
-   dentro de admin/ la sirve Vercel como archivo estático, y eso se saltaría la
-   comprobación de sesión. El CSS y el JS sí pueden quedarse ahí: no llevan
-   ningún dato, y sin sesión la API no les contesta nada. */
-const PANEL = path.join(__dirname, '..', '_panel');
+/* Los dos HTML del panel viven DENTRO de api/ a propósito.
+
+   Vercel sirve como archivo estático cualquier cosa que esté en la raíz del
+   proyecto, y eso se salta la comprobación de sesión. Primero estaban en
+   admin/; se movieron a _panel/ para evitarlo y resultó que daba igual: la
+   raíz entera se sirve, así que /_panel/index.html seguía entregando el panel
+   a cualquiera sin entrar. Dentro de api/ no pasa: todo lo que empieza por
+   /api/ lo atiende esta función, que responde 404 a lo que no reconoce.
+
+   El CSS y el JS sí pueden quedarse en admin/: no llevan ningún dato, y sin
+   sesión la API no les contesta nada. */
+const PANEL = path.join(__dirname, '_panel');
 
 function enviarArchivoDelPanel(res, nombre) {
   const p = nombre === 'login.html'

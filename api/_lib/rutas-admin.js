@@ -32,7 +32,15 @@ async function entrar(req, res) {
 
   // Dos frenos: por dirección y por correo. Con solo el primero, alguien con
   // muchas direcciones podía seguir probando contra la misma cuenta.
-  const llaveCorreo = 'correo:' + String((await cuerpoGuardado(req)).correo || '').toLowerCase().slice(0, 160);
+  /* El correo se normaliza IGUAL que al buscar el usuario. Si no, " a@b.com"
+     con un espacio delante cuenta como otra cuenta para el freno pero entra a
+     la misma: bastaba ir añadiendo espacios para probar contraseñas sin
+     tope. Si el correo ni siquiera tiene forma de correo se usa tal cual, para
+     que tampoco por ahí se escape. */
+  const correoCrudo = String((await cuerpoGuardado(req)).correo || '');
+  let correoParaFreno;
+  try { correoParaFreno = V.correo(correoCrudo); } catch (_) { correoParaFreno = correoCrudo.trim().toLowerCase(); }
+  const llaveCorreo = 'correo:' + correoParaFreno.slice(0, 160);
   if (await auth.demasiadosIntentos(llaveIp) || await auth.demasiadosIntentos(llaveCorreo)) {
     return fallo(res, 429, `Demasiados intentos. Espera ${auth.VENTANA_MINUTOS} minutos y vuelve a probar.`);
   }
@@ -144,7 +152,7 @@ async function leerCamposProducto(datos, idActual) {
   const tipo = datos.tipo ? V.unoDe(datos.tipo, tiposOk, 'El tipo de gorra') : null;
   if (!tipo) throw new V.ErrorDeDatos('Elige el tipo de gorra.');
 
-  const colores = V.lista(datos.colores, { max: 8, maxLargo: 40 })
+  const colores = V.lista(datos.colores, { max: 8, maxLargo: 40, que: 'colores' })
     .filter((c) => coloresOk.includes(c));
 
   const precio = V.precio(datos.precio);
@@ -170,7 +178,7 @@ async function leerCamposProducto(datos, idActual) {
     colores: JSON.stringify(colores),
     talla: V.textoOpcional(datos.talla, { max: 80 }),
     descripcion: V.parrafo(datos.descripcion, { max: 1200 }) || null,
-    caracteristicas: JSON.stringify(V.lista(datos.caracteristicas, { max: 10, maxLargo: 200 })),
+    caracteristicas: JSON.stringify(V.lista(datos.caracteristicas, { max: 10, maxLargo: 200, que: 'características' })),
   };
 }
 
@@ -356,6 +364,12 @@ async function cambiarBandera(req, res, id) {
 /* ═══ MARCAS Y TIPOS (categorías) ══════════════════════════════════════════ */
 
 /* Las dos tablas se manejan igual, así que comparten el código. */
+/* Un mensaje que se entiende sin saber lo que es un "slug" */
+function mismaDireccion(etiqueta, nombreDeLaOtra) {
+  return `"${nombreDeLaOtra}" ya usa esa misma dirección web (se saca del nombre, sin ` +
+    `mayúsculas ni signos). Ponle a ${etiqueta} un nombre que se distinga más.`;
+}
+
 function haceTaxonomia(tabla, etiqueta, campoImagen) {
   const campoProducto = tabla === 'marcas' ? 'marca' : 'tipo';
 
@@ -377,10 +391,17 @@ function haceTaxonomia(tabla, etiqueta, campoImagen) {
       if (await uno(`SELECT id FROM ${tabla} WHERE nombre = ?`, [nombre])) {
         return fallo(res, 409, `Ya existe ${etiqueta} con ese nombre.`);
       }
+      /* La dirección web se saca del nombre quitando acentos, signos y
+         mayúsculas, así que "New Era" y "NEW ERA!" dan la misma. Esa columna es
+         única: sin esta comprobación la base tiraba un error de restricción y
+         al dueño le salía un 500 que no le explica nada. */
+      const direccion = V.slug('', nombre);
+      const otra = await uno(`SELECT nombre FROM ${tabla} WHERE slug = ?`, [direccion]);
+      if (otra) return fallo(res, 409, mismaDireccion(etiqueta, otra.nombre));
       const sig = await uno(`SELECT COALESCE(MAX(orden), 0) + 1 AS n FROM ${tabla}`);
       const r = await correr(
         `INSERT INTO ${tabla} (nombre, slug, ${campoImagen}, visible, orden) VALUES (?, ?, ?, ?, ?)`,
-        [nombre, V.slug('', nombre), V.textoOpcional(d[campoImagen], { max: 300 }), V.bool(d.visible !== false), Number(sig.n)]
+        [nombre, direccion, V.textoOpcional(d[campoImagen], { max: 300 }), V.bool(d.visible !== false), Number(sig.n)]
       );
       return ok(res, { id: Number(r.lastInsertRowid), mensaje: 'Creado correctamente.' });
     },
@@ -393,6 +414,9 @@ function haceTaxonomia(tabla, etiqueta, campoImagen) {
       const nombre = V.textoObligatorio(d.nombre, `El nombre de ${etiqueta}`, { max: 60 });
       const choque = await uno(`SELECT id FROM ${tabla} WHERE nombre = ? AND id <> ?`, [nombre, Number(id)]);
       if (choque) return fallo(res, 409, `Ya existe ${etiqueta} con ese nombre.`);
+      const direccion = V.slug('', nombre);
+      const otra = await uno(`SELECT nombre FROM ${tabla} WHERE slug = ? AND id <> ?`, [direccion, Number(id)]);
+      if (otra) return fallo(res, 409, mismaDireccion(etiqueta, otra.nombre));
 
       // Lo que el formulario no manda se queda como estaba: antes, guardar
       // sin tocar esos campos reiniciaba el orden a 0 y reactivaba las ocultas.
@@ -401,7 +425,7 @@ function haceTaxonomia(tabla, etiqueta, campoImagen) {
       const imagen = campoImagen in d ? V.textoOpcional(d[campoImagen], { max: 300 }) : fila[campoImagen];
       await correr(
         `UPDATE ${tabla} SET nombre = ?, slug = ?, ${campoImagen} = ?, visible = ?, orden = ? WHERE id = ?`,
-        [nombre, V.slug('', nombre), imagen, visible, orden, Number(id)]
+        [nombre, direccion, imagen, visible, orden, Number(id)]
       );
       // Si cambió el nombre, los productos tienen que seguir apuntando bien
       if (fila.nombre !== nombre) {
@@ -569,8 +593,14 @@ async function verAjuste(req, res, clave) {
   return ok(res, { clave, valor: await C.leerAjuste(clave) });
 }
 
+/* Los bloques que el panel enseña dentro de Configuración son de administrador.
+   El manual lo promete y la pantalla no se la enseña a un editor; si aquí no se
+   exige, esconder el botón es lo único que lo separaba de cambiarlos llamando
+   a la API, y eso no es seguridad. */
+const AJUSTES_DE_CONFIGURACION = ['sitio', 'seo', 'checkout', 'moneda', 'colores'];
+
 async function guardarAjusteRuta(req, res, clave) {
-  await auth.exigir(req, clave === 'sitio' || clave === 'seo' ? 'config' : 'contenido');
+  await auth.exigir(req, AJUSTES_DE_CONFIGURACION.includes(clave) ? 'config' : 'contenido');
   if (!Object.prototype.hasOwnProperty.call(FORMAS, clave)) return fallo(res, 404, 'Ese bloque no existe.');
   const cuerpo = await cuerpoJson(req);
   const limpio = FORMAS[clave](cuerpo.valor !== undefined ? cuerpo.valor : cuerpo);
@@ -609,8 +639,11 @@ async function guardarBanner(req, res, id) {
 }
 
 async function borrarBanner(req, res, id) {
-  await auth.exigir(req, 'contenido');
-  await correr('DELETE FROM banners WHERE id = ?', [Number(id)]);
+  // Eliminar es de administrador, como en el resto del panel
+  await auth.exigir(req, 'borrar');
+  const r = await correr('DELETE FROM banners WHERE id = ?', [Number(id)]);
+  // Decir "eliminado" de algo que ya no estaba engaña sobre lo que pasó
+  if (!r.rowsAffected) return fallo(res, 404, 'Ese banner ya no existe.');
   return ok(res, { mensaje: 'Banner eliminado.' });
 }
 

@@ -37,8 +37,18 @@ const TIPOS = {
   '.webmanifest': 'application/manifest+json; charset=utf-8',
 };
 
-/* Nunca servir nada de estas carpetas por web */
-const PROHIBIDO = ['_datos', '_panel', 'api', 'node_modules', '_tools', '.git'];
+/* SOLO se sirven del disco estas carpetas. Es una lista de lo permitido, no de
+   lo prohibido, y eso es a propósito: con una lista de prohibidos hay que
+   acordarse de todo lo que no debe salir, y basta olvidar uno.
+
+   Se olvidó uno: con la lista anterior, http://localhost:5305/.env.local
+   entregaba en texto plano el token de Vercel Blob y las credenciales de la
+   base de producción a cualquiera que estuviera en la misma red wifi mientras
+   el servidor estuviera encendido. */
+const CARPETAS_PUBLICAS = ['assets', 'css', 'js', 'admin'];
+
+/* Y estos archivos sueltos de la raíz, uno por uno */
+const ARCHIVOS_PUBLICOS = ['favicon.ico', 'favicon.svg', 'apple-touch-icon.png'];
 
 /* Las direcciones que arma el servidor, no el disco */
 const esPaginaDeTienda = (c) =>
@@ -48,8 +58,9 @@ const esPaginaDeTienda = (c) =>
 
 function esRutaSegura(rel) {
   if (rel.includes('..') || rel.includes('\0')) return false;
-  const primera = rel.split('/')[0];
-  return !PROHIBIDO.includes(primera);
+  const partes = rel.split('/');
+  if (partes.length === 1) return ARCHIVOS_PUBLICOS.includes(partes[0]);
+  return CARPETAS_PUBLICAS.includes(partes[0]);
 }
 
 /* Una promesa suelta no puede tumbar el servidor: se anota y se sigue */
@@ -82,10 +93,10 @@ const servidor = http.createServer(async (req, res) => {
     if (camino === '/admin' || camino === '/admin/' || camino === '/admin/index.html') {
       const redirigido = await protegerPanel(req, res);
       if (redirigido) return;
-      return archivo(res, path.join(RAIZ, '_panel', 'index.html'));
+      return archivo(res, path.join(RAIZ, 'api', '_panel', 'index.html'));
     }
     if (camino === '/admin/login' || camino === '/admin/login.html') {
-      return archivo(res, path.join(RAIZ, '_panel', 'login.html'));
+      return archivo(res, path.join(RAIZ, 'api', '_panel', 'login.html'));
     }
 
     // 4. Páginas de la tienda: SIEMPRE las arma el servidor con lo que hay en

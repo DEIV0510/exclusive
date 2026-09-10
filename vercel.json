@@ -7,7 +7,7 @@
     "api/index.js": {
       "memory": 1024,
       "maxDuration": 30,
-      "includeFiles": "{_tools/**,_panel/**}"
+      "includeFiles": "{_tools/**,api/_panel/**}"
     }
   },
   "rewrites": [

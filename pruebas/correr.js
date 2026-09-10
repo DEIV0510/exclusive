@@ -123,6 +123,30 @@ const { grupo, prueba, debe, resumen, tiendaDePruebas, RAIZ } = require('./ayuda
         'esperaba que rechazara el origen, dio ' + r.estado);
     });
 
+    await prueba('el servidor NO entrega archivos privados del proyecto', async () => {
+      /* Con una lista de prohibidos en vez de una de permitidos, se olvidó
+         .env.local: el servidor de trabajo entregaba el token de Vercel Blob y
+         las credenciales de la base de producción a cualquiera en la misma
+         red wifi. */
+      const privados = [
+        '/.env', '/.env.local', '/.vercel/project.json', '/package.json',
+        '/vercel.json', '/LEEME.md', '/servidor-local.js', '/api/_lib/auth.js',
+        '/api/_panel/index.html', '/api/_panel/login.html', '/_datos/tienda.db',
+        '/_tools/sembrar.js', '/_tools/semilla/config.js', '/node_modules/sharp/package.json',
+        '/pruebas/correr.js', '/.git/config',
+      ];
+      for (const ruta of privados) {
+        const r = await t.pedir('GET', ruta, undefined, { sinSesion: true, seguirRedirecciones: false });
+        debe.cierto(r.estado === 404 || r.estado === 400, ruta + ' salió con ' + r.estado);
+      }
+    });
+
+    await prueba('lo que sí es público se sigue sirviendo', async () => {
+      for (const ruta of ['/css/base.css', '/js/nucleo.js', '/admin/panel.js', '/admin/panel.css']) {
+        debe.ser((await t.pedir('GET', ruta, undefined, { sinSesion: true })).estado, 200, ruta);
+      }
+    });
+
     /* ═══ PERMISOS DE VERDAD, NO BOTONES ESCONDIDOS ═════════════════════ */
     grupo('Seguridad: cada rol hace lo suyo');
 
@@ -149,6 +173,37 @@ const { grupo, prueba, debe, resumen, tiendaDePruebas, RAIZ } = require('./ayuda
       t.galleta = galletaAdmin;
       debe.ser((await t.pedir('DELETE', '/api/admin/colecciones/' + nueva.datos.id)).estado, 200,
         'el administrador sí puede borrar');
+    });
+
+    await prueba('un editor tampoco borra banners ni fotos, ni toca Configuración', async () => {
+      // El panel le esconde esas pantallas, pero esconder no es impedir
+      await t.entrar();
+      const banner = await t.pedir('POST', '/api/admin/banners',
+        { titulo: 'De prueba', activo: false });
+      debe.ser(banner.estado, 200);
+      const galletaAdmin = t.galleta;
+
+      t.galleta = '';
+      await t.entrar('editor@ecm.local', 'ClaveEditor2609');
+      debe.ser((await t.pedir('DELETE', '/api/admin/banners/' + banner.datos.id)).estado, 403, 'borrar banner');
+      debe.ser((await t.pedir('DELETE', '/api/admin/imagenes/portada')).estado, 403, 'borrar una foto');
+      debe.ser((await t.pedir('PUT', '/api/admin/ajustes/checkout',
+        { valor: { pedirCiudad: false, pedirDireccion: false, pedirNota: false } })).estado, 403,
+      'cambiar los datos que se le piden al cliente');
+      debe.ser((await t.pedir('PUT', '/api/admin/ajustes/seo',
+        { valor: { titulo: 'x', descripcion: '', imagen: '' } })).estado, 403, 'cambiar los buscadores');
+      // Lo suyo sí lo puede hacer
+      debe.ser((await t.pedir('PUT', '/api/admin/banners/' + banner.datos.id,
+        { titulo: 'Editado por el editor', activo: false })).estado, 200, 'editar un banner sí');
+
+      t.galleta = galletaAdmin;
+      debe.ser((await t.pedir('DELETE', '/api/admin/banners/' + banner.datos.id)).estado, 200);
+    });
+
+    await prueba('borrar algo que ya no existe no responde «eliminado»', async () => {
+      await t.entrar();
+      debe.ser((await t.pedir('DELETE', '/api/admin/banners/999999')).estado, 404);
+      debe.ser((await t.pedir('DELETE', '/api/admin/colecciones/999999')).estado, 404);
     });
 
     await prueba('no se puede quedar la tienda sin ningún administrador', async () => {
@@ -285,6 +340,30 @@ const { grupo, prueba, debe, resumen, tiendaDePruebas, RAIZ } = require('./ayuda
       debe.noContener((await t.pedir('GET', '/js/datos.js')).texto, 'Gorra escondida', 'ni en los datos');
       debe.noContener((await t.pedir('GET', '/sitemap.xml')).texto, slug, 'ni en el mapa del sitio');
       await t.pedir('DELETE', '/api/admin/productos/' + creado.datos.id);
+    });
+
+    await prueba('pasarse de colores o de características se avisa, no se recorta callado', async () => {
+      // Antes se guardaban seis de las ocho y el panel decía «guardado correctamente»
+      await t.entrar();
+      const muchas = Array.from({ length: 14 }, (_, i) => 'Característica número ' + (i + 1));
+      const r = await t.pedir('POST', '/api/admin/productos',
+        { nombre: 'Gorra con mucha letra', tipo: 'Snapback', caracteristicas: muchas });
+      debe.ser(r.estado, 400);
+      debe.contener(String(r.datos.error), '10', 'el mensaje dice cuántas caben');
+      debe.contener(String(r.datos.error), '14', 'y cuántas hay');
+    });
+
+    await prueba('dos marcas con nombres parecidos avisan, no revientan con un 500', async () => {
+      /* "New Era" y "NEW ERA!" dan la misma dirección web, que es única en la
+         base: antes salía un error de restricción y el panel decía «intenta
+         nuevamente» sin explicar nada. */
+      await t.entrar();
+      const a = await t.pedir('POST', '/api/admin/marcas', { nombre: 'Marca De Prueba' });
+      debe.ser(a.estado, 200);
+      const b = await t.pedir('POST', '/api/admin/marcas', { nombre: '¡MARCA DE PRUEBA!' });
+      debe.ser(b.estado, 409, 'esperaba un aviso, no un error del servidor');
+      debe.contener(String(b.datos.error), 'Marca De Prueba', 'el mensaje dice con cuál choca');
+      await t.pedir('DELETE', '/api/admin/marcas/' + a.datos.id);
     });
 
     await prueba('un precio anterior menor que el actual no se acepta', async () => {
@@ -490,6 +569,43 @@ const { grupo, prueba, debe, resumen, tiendaDePruebas, RAIZ } = require('./ayuda
     });
   } finally {
     await t.cerrar();
+  }
+
+  /* ═══ EL FRENO DE LOS INTENTOS ════════════════════════════════════════
+     En su propia tienda: al probarlo se bloquea esta dirección durante un
+     rato, y eso dejaría sin entrar a las demás pruebas. */
+  const conFreno = await tiendaDePruebas();
+  try {
+    grupo('El freno contra quien prueba contraseñas a lo bruto');
+
+    await prueba('tras varios intentos fallidos se bloquea', async () => {
+      let bloqueado = false;
+      for (let i = 0; i < 14 && !bloqueado; i++) {
+        const r = await conFreno.pedir('POST', '/api/admin/login',
+          { correo: 'pruebas@ecm.local', clave: 'malamalamala' + i }, { sinSesion: true });
+        if (r.estado === 429) bloqueado = true;
+      }
+      debe.cierto(bloqueado, 'esperaba que en algún momento dijera «demasiados intentos»');
+    });
+
+    await prueba('un espacio en el correo NO reinicia el freno', async () => {
+      /* El freno se contaba con el correo tal cual llegaba y la búsqueda del
+         usuario lo normalizaba: " a@b.com" contaba como otra cuenta pero
+         entraba a la misma, así que bastaba ir añadiendo espacios. */
+      for (const variante of [' pruebas@ecm.local', 'pruebas@ecm.local ', 'PRUEBAS@ECM.LOCAL', '  Pruebas@Ecm.Local  ']) {
+        const r = await conFreno.pedir('POST', '/api/admin/login',
+          { correo: variante, clave: 'otraequivocada' }, { sinSesion: true });
+        debe.ser(r.estado, 429, 'con el correo ' + JSON.stringify(variante));
+      }
+    });
+
+    await prueba('y con la contraseña buena tampoco entra mientras está bloqueado', async () => {
+      const r = await conFreno.pedir('POST', '/api/admin/login',
+        { correo: 'pruebas@ecm.local', clave: 'ClaveDePruebas2609' }, { sinSesion: true });
+      debe.ser(r.estado, 429);
+    });
+  } finally {
+    await conFreno.cerrar();
   }
 
   /* ═══ UNA BASE VACÍA DEL TODO ═════════════════════════════════════════ */

@@ -203,7 +203,8 @@ async function subirImagen(req, res) {
 
 async function quitarImagen(req, res, base) {
   const auth = require('./auth');
-  await auth.exigir(req, 'productos');
+  // Borrar del servidor es de administrador, como el resto de los borrados
+  await auth.exigir(req, 'borrar');
   await imagenes.borrarFoto(V.texto(base, { max: 200 }));
   return ok(res, { mensaje: 'Foto eliminada.' });
 }
