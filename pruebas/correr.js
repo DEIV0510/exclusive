@@ -543,6 +543,42 @@ const { grupo, prueba, debe, resumen, tiendaDePruebas, RAIZ } = require('./ayuda
       await t.pedir('DELETE', '/api/admin/productos/' + creado.datos.id);
     });
 
+    await prueba('la dirección de entrega y la nota llegan al panel', async () => {
+      // Se guardaban pero no se enseñaban en ninguna parte: el dueño tenía que
+      // volver a preguntarle la dirección al cliente
+      await t.entrar();
+      const creado = await t.pedir('POST', '/api/admin/productos',
+        { nombre: 'Gorra con envío', tipo: 'Snapback', precio: 90000, estado: 'disponible' });
+      const hecho = await t.pedir('POST', '/api/pedido', {
+        items: [{ id: creado.datos.id, cantidad: 1 }],
+        cliente: 'Ana', telefono: '3001112233',
+        ciudad: 'Medellín', direccion: 'Calle 10 #4-20, apto 301',
+        nota: 'Timbre dañado\nLlamar al llegar',
+      }, { sinSesion: true });
+      debe.ser(hecho.estado, 200);
+      const pedido = (await t.pedir('GET', '/api/admin/pedidos')).datos.items
+        .filter((p) => p.referencia === hecho.datos.referencia)[0];
+      debe.ser(pedido.ciudad, 'Medellín');
+      debe.ser(pedido.direccion, 'Calle 10 #4-20, apto 301');
+      debe.contener(pedido.nota, 'Timbre dañado');
+      debe.contener(pedido.nota, '\n', 'los saltos de línea se conservan');
+      await t.pedir('DELETE', '/api/admin/productos/' + creado.datos.id);
+    });
+
+    await prueba('«Imagen al compartir» no acepta comillas ni direcciones', async () => {
+      /* Es el nombre de una foto: con él se arma la etiqueta que leen WhatsApp
+         y Google. Sin validar, unas comillas cerraban el atributo y metían
+         HTML en la cabecera de TODAS las páginas. */
+      await t.entrar();
+      const antes = (await t.pedir('GET', '/api/admin/ajustes/seo')).datos.valor;
+      for (const imagen of ['foto" onload="alert(1)', 'https://malo.example/x.jpg', '../../secreto']) {
+        const r = await t.pedir('PUT', '/api/admin/ajustes/seo',
+          { valor: { titulo: '', descripcion: '', imagen } });
+        debe.ser(r.estado, 400, 'con ' + JSON.stringify(imagen));
+      }
+      await t.pedir('PUT', '/api/admin/ajustes/seo', { valor: antes });
+    });
+
     await prueba('un pedido vacío se rechaza', async () => {
       const r = await t.pedir('POST', '/api/pedido', { items: [] }, { sinSesion: true });
       debe.ser(r.estado, 400);

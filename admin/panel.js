@@ -847,7 +847,11 @@
             if (e.datos && e.datos.requiereConfirmacion) {
               confirmar({
                 titulo: '¿Eliminar de todos modos?',
-                texto: e.message + ' Los productos NO se borran, pero se quedan sin ese dato y tendrás que asignarles otro.',
+                // Lo que pasa de verdad es que esas gorras DESAPARECEN de la
+                // tienda hasta que se les ponga otra categoría. Decir solo que
+                // "se quedan sin ese dato" no prepara para eso.
+                texto: e.message + ' Los productos NO se borran, pero quedan OCULTOS: dejan de verse en la ' +
+                  'tienda hasta que les asignes otra. Tendrás que entrar a cada uno y ponérsela.',
                 aceptar: 'Sí, eliminar', peligro: true,
               }).then(function (si) {
                 if (!si) return;
@@ -1474,7 +1478,10 @@
             activa: !!fd.get(x[0] + '-activa'),
           };
         });
-        guardarBloque('redes', valor);
+        /* Se repinta con lo que el servidor guardó de verdad. El servidor
+           apaga una red que se quedó sin enlace, y el interruptor seguía
+           encendido en pantalla: el dueño se iba creyendo que estaba puesta. */
+        intentar(api('PUT', '/ajustes/redes', { valor: valor })).then(vistaRedes);
       });
     }).catch(errorDeCarga);
   }
@@ -1487,11 +1494,22 @@
       contenido().innerHTML = '<div class="tarjeta">' +
         '<p class="sub">Cada vez que un cliente cierra su pedido por WhatsApp queda registrado aquí.</p>' +
         (d.items.length
-          ? '<div class="tabla-caja"><table><thead><tr><th>Referencia</th><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th></tr></thead><tbody>' +
+          ? '<div class="tabla-caja"><table><thead><tr><th>Referencia</th><th>Fecha</th><th>Cliente</th>' +
+            '<th>Entrega</th><th>Productos</th><th>Total</th><th>Estado</th></tr></thead><tbody>' +
             d.items.map(function (p) {
+              /* La ciudad, la dirección y la nota se guardaban pero no se
+                 enseñaban en ninguna parte: el dueño tenía que volver a
+                 preguntárselas al cliente por WhatsApp. La nota conserva los
+                 saltos de línea, que es donde la gente escribe el piso, el
+                 timbre o la referencia de la casa. */
+              var entrega = [];
+              if (p.ciudad) entrega.push('<b>' + esc(p.ciudad) + '</b>');
+              if (p.direccion) entrega.push(esc(p.direccion));
+              if (p.nota) entrega.push('<span style="color:var(--tx-3);white-space:pre-line">' + esc(p.nota) + '</span>');
               return '<tr data-id="' + p.id + '"><td><b>' + esc(p.referencia) + '</b></td>' +
                 '<td data-columna="Fecha">' + esc(fecha(p.fecha)) + '</td>' +
                 '<td data-columna="Cliente">' + esc(p.cliente || '—') + '<br><small style="color:var(--tx-3)">' + esc(p.telefono || '') + '</small></td>' +
+                '<td data-columna="Entrega"><small>' + (entrega.length ? entrega.join('<br>') : '—') + '</small></td>' +
                 '<td data-columna="Pidió"><small>' + p.items.map(function (i) { return esc(i.cantidad + '× ' + i.nombre); }).join('<br>') + '</small></td>' +
                 '<td data-columna="Total">' + precioTexto(p.total) + '</td>' +
                 '<td data-columna="Estado"><select data-estado>' + d.estados.map(function (e) {

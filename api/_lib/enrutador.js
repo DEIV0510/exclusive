@@ -259,7 +259,10 @@ async function registrarPedido(req, res) {
       telefonoDelPedido(d.telefono),
       V.textoOpcional(d.ciudad, { max: 90 }),
       V.textoOpcional(d.direccion, { max: 160 }),
-      V.textoOpcional(d.nota, { max: 400 }),
+      /* La nota conserva los saltos de línea: es donde el cliente escribe el
+         piso, el timbre o la referencia de la casa, y con el validador de una
+         sola línea llegaban pegados ("Timbre dañadoLlamar al llegar"). */
+      V.parrafo(d.nota, { max: 400 }) || null,
       JSON.stringify(items),
       faltaPrecio ? null : total,
       ahora(),

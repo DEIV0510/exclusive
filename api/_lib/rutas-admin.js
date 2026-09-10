@@ -576,7 +576,9 @@ const FORMAS = {
   seo: (d) => ({
     titulo: V.texto(d.titulo, { max: 65 }),
     descripcion: V.texto(d.descripcion, { max: 165 }),
-    imagen: V.textoOpcional(d.imagen, { max: 300 }),
+    // Es el NOMBRE de una foto de la tienda, no una dirección: con esto se
+    // arma un src=, así que nada de rutas, comillas ni enlaces de fuera
+    imagen: d.imagen ? V.nombreDeFoto(d.imagen, 'La imagen al compartir') : '',
   }),
   coleccionesTexto: (d) => ({
     eyebrow: V.texto(d.eyebrow, { max: 60 }),

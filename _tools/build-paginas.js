@@ -117,8 +117,11 @@ function altDe(p, i) {
    no siempre leen WebP y, además, las medidas declaradas (630) no coincidían
    con las reales (940 a 1458), así que la miniatura salía cortada.          */
 function cabeza({ titulo, descripcion, ruta, imagen, imagenAlt, jsonld, precargarImagen, tipoOg }) {
-  const canonical = ruta === 'index.html' ? BASE + '/' : abs(ruta);
-  const img = imagen || abs('assets/logo/og-image.jpg');
+  const canonical = esc(ruta === 'index.html' ? BASE + '/' : abs(ruta));
+  /* Escapado: la dirección de la imagen puede venir de Configuración ›
+     Buscadores, que es una caja de texto. Sin esto, unas comillas ahí cerraban
+     el atributo y metían HTML en la cabecera de TODAS las páginas. */
+  const img = esc(imagen || abs('assets/logo/og-image.jpg'));
   return `<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
