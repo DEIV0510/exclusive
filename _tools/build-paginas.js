@@ -388,6 +388,20 @@ function slidesDeConfig() {
     slides = PRODUCTOS.filter((p) => p.destacado).slice(0, 4).map((p) => ({ p }));
   }
   if (!slides.length) slides = PRODUCTOS.slice(0, 4).map((p) => ({ p }));
+
+  /* Último recorte de red: sin diapositivas Y sin productos —una tienda recién
+     instalada, o el día que el dueño oculte la última gorra— la portada entera
+     reventaba con un 503. Vale más una portada sobria que un sitio caído. */
+  if (!slides.length) {
+    slides = [{
+      suelta: true,
+      imagen: SIN_FOTO,
+      titulo: CONFIG.marca,
+      texto: CONFIG.descripcionCorta || '',
+      cta: 'Ver el catálogo',
+      enlace: 'catalogo.html',
+    }];
+  }
   return slides;
 }
 
