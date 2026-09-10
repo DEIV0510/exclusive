@@ -24,7 +24,8 @@ panel y se ve al instante.
 | Cambiar las fotos de "Colecciones" | Colecciones |
 | Anunciar una promoción | Banners |
 | Ver los pedidos | Pedidos |
-| Cambiar mi contraseña | Administradores → Contraseña |
+| Cambiar mi contraseña | **Mi cuenta** |
+| Ver a dónde llevar un pedido | Pedidos → columna **Entrega** |
 
 ---
 
@@ -129,12 +130,18 @@ Aquí editas la portada sin tocar código.
 
 ### Carrusel
 
-Las diapositivas que rotan arriba. Cada una puede ser:
+Las diapositivas que rotan arriba. Cada una tiene un **«Qué muestra»** con dos
+opciones, y se cambia cuando quieras:
 
-- **De producto**: eliges la gorra y el carrusel toma su foto y su enlace.
-- **De portada**: usa una foto suelta. Lleva la **foto de fondo**, el
+- **Una gorra del catálogo**: la eliges y el carrusel toma su foto y su enlace.
+  Las gorras ocultas salen marcadas: si eliges una, esa diapositiva no se ve en
+  la tienda, y el panel te lo avisa.
+- **Una foto que yo elija**: usa una foto suelta. Lleva la **foto de fondo**, el
   `encuadre` (qué parte de la foto se ve) y el `desenfoque` (cuánto se difumina
   el fondo, de 0 a 12; la primera está en 1).
+
+Al cambiar de una a otra no se pierde nada: el título y los textos se quedan, y
+si vuelves atrás recuperas la gorra o la foto que tenías.
 
 La foto se elige con el botón **Subir foto** o **Elegir una que ya tengo**, y
 se ve al lado mientras la escoges. Ya no hay que escribir el nombre del
@@ -200,7 +207,7 @@ encenderlos cuando toque, sin volver a escribirlos.
 Una tabla con todas las gorras y tres casillas: **Destacado**, **Nuevo** y
 **Exclusivo**. Marcar o desmarcar guarda al instante.
 
-- *Destacado*: sale en la selección de la portada.
+- *Destacado*: sale en la selección de la portada. **Caben 8**: si marcas más, salen las 8 primeras de la lista.
 - *Nuevo* y *Exclusivo*: solo pintan una etiqueta en la tarjeta.
 
 ---
@@ -218,7 +225,7 @@ por ejemplo `573222544571`.
 
 ### Redes
 
-Instagram, TikTok y Facebook. Cada una tiene un interruptor.
+Instagram, TikTok y Facebook. Cada una tiene un interruptor, y las tres salen de verdad en el menú, en la franja de entregas y en el pie.
 
 **Una red apagada, o sin enlace, no se muestra en la tienda.** Nunca queda un
 botón que no lleva a ninguna parte.
@@ -228,7 +235,8 @@ botón que no lleva a ninguna parte.
 ## 7. Pedidos
 
 Cuando un cliente cierra su pedido por WhatsApp, queda registrado aquí con su
-referencia, la fecha, sus datos, lo que pidió y el total.
+referencia, la fecha, sus datos, **a dónde hay que llevarlo** (ciudad,
+dirección y la nota que haya escrito), lo que pidió y el total.
 
 **El total lo calcula el servidor con tus precios**, no el navegador del
 cliente: así nadie puede manipularlo desde su teléfono.
@@ -273,7 +281,8 @@ alguien intente saltarse la pantalla.
 No se puede quedar la tienda sin ningún administrador: el panel te lo impide.
 
 Al cambiar tu contraseña se cierran todas tus otras sesiones y tienes que
-volver a entrar.
+volver a entrar. La tuya se cambia en **Mi cuenta**, que es la única sección
+que ve también un editor.
 
 ### Crear tu usuario
 
@@ -319,7 +328,20 @@ Otros comandos:
 ```
 node _tools/build-images.js     recorta y optimiza las fotos de la carpeta "gorras"
 node _tools/build-paginas.js    saca una copia estática del sitio en _estatico/
+npm test                        comprueba que todo sigue funcionando
 ```
+
+### Las pruebas
+
+`npm test` levanta la tienda de verdad sobre una base temporal y desechable y
+comprueba unas sesenta cosas: que las páginas carguen, que el panel no se abra
+sin sesión, que un editor no pueda borrar, que editar un campo no borre los
+demás, que el total del pedido lo calcule el servidor, que la tienda aguante
+direcciones y datos raros sin caerse.
+
+**No toca tu base ni la de producción**, así que puedes correrlo con el panel
+abierto. Si tocas el código, córrelo antes de publicar: varias de esas pruebas
+existen porque el fallo que comprueban llegó a estar publicado.
 
 ---
 
@@ -334,7 +356,7 @@ vercel integration add turso
 ```
 
 Se abre el navegador para aceptar los términos. Al terminar, Vercel deja solas
-las variables `TURSO_URL` y `TURSO_TOKEN`.
+las variables `TURSO_DATABASE_URL` y `TURSO_AUTH_TOKEN`.
 
 **2. Almacenamiento de fotos.** En el panel de Vercel, pestaña *Storage*, crea
 un **Blob**. Deja la variable `BLOB_READ_WRITE_TOKEN`.
@@ -348,22 +370,29 @@ un **Blob**. Deja la variable `BLOB_READ_WRITE_TOKEN`.
 vercel deploy --prod --yes
 ```
 
-**4. Crear tu usuario en producción.** Baja las variables con
-`vercel env pull .env.local` y córrelo. El comando lee ese archivo solo:
-
-En PowerShell (que es la consola de Windows):
+**4. Crear tu usuario en producción.** Primero baja las credenciales una vez:
 
 ```
-$env:TURSO_URL="..."; $env:TURSO_TOKEN="..."; node _tools/sembrar.js --admin tu@correo.com
+vercel env pull .env.local
 ```
 
-En Mac o Linux:
+Y después, con `--produccion`, que es lo que hace que apunte a la base
+publicada y no a la tuya:
 
 ```
-TURSO_URL=... TURSO_TOKEN=... node _tools/sembrar.js --admin tu@correo.com
+node _tools/sembrar.js --produccion --admin tu@correo.com
 ```
 
-Eso siembra el catálogo y crea tu usuario en la base de producción.
+Eso siembra el catálogo y crea tu usuario **en la base de producción**. El
+comando te dice contra qué base está trabajando antes de tocar nada; si no ves
+la palabra PRODUCCIÓN, no la estás tocando.
+
+> ⚠️ Sin `--produccion` el comando trabaja contra la base de tu computador y
+> te dice «usuario creado» igual. Es el error más fácil de cometer aquí.
+
+> El archivo `.env.local` lleva las claves de producción. No se sube al
+> repositorio y el servidor de trabajo no lo sirve por web, pero no lo mandes
+> por WhatsApp ni lo dejes en una carpeta compartida.
 
 **5. Comprueba la dirección real.** Entra a la dirección que usa el cliente (no
 solo a la que imprime Vercel) y confirma que se ve lo nuevo.
@@ -410,9 +439,10 @@ Ahora:  base de datos   ->   js/datos.js  (lo arma el servidor)
 ```
 
 ```
-admin/                el panel (HTML + CSS + JS planos, sin librerías)
+admin/                el CSS y el JS del panel (no llevan datos)
 api/
   index.js            punto de entrada en Vercel
+  _panel/             el HTML del panel: index.html y login.html
   _lib/
     db.js             conexión (archivo local o Turso) y esquema
     auth.js           contraseñas, sesiones y permisos
@@ -427,6 +457,7 @@ _tools/
   build-images.js     procesa las fotos de la carpeta "gorras"
   sembrar.js          pasa la semilla a la base de datos
   semilla/            el catálogo original escrito a mano (solo para sembrar)
+pruebas/              las pruebas de "npm test"
 _datos/               la base de datos local (no se sube)
 _estatico/            copia estática de respaldo (no se sube)
 servidor-local.js     servidor para trabajar en el computador
