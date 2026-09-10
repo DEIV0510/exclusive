@@ -562,6 +562,29 @@ const { grupo, prueba, debe, resumen, tiendaDePruebas, RAIZ } = require('./ayuda
       await t.pedir('PUT', '/api/admin/ajustes/whatsapp', { valor: antes });
     });
 
+    await prueba('Facebook existe de verdad en la tienda, no solo en el panel', async () => {
+      // El interruptor estaba en el panel pero la tienda no tenía dónde
+      // ponerlo: encenderlo no hacía absolutamente nada
+      const home = (await t.pedir('GET', '/')).texto;
+      debe.contener(home, 'data-fb', 'la portada tiene dónde poner Facebook');
+      debe.contener(home, 'i-facebook', 'y su icono');
+      const ficha = (await t.pedir('GET', '/catalogo.html')).texto;
+      debe.contener(ficha, 'data-fb', 'el pie de todas las páginas también');
+    });
+
+    await prueba('vaciar un bloque esconde su sección, no deja el título solo', async () => {
+      await t.entrar();
+      const pasos = (await t.pedir('GET', '/api/admin/ajustes/pasos')).datos.valor;
+      const faq = (await t.pedir('GET', '/api/admin/ajustes/faq')).datos.valor;
+      await t.pedir('PUT', '/api/admin/ajustes/pasos', { valor: [] });
+      await t.pedir('PUT', '/api/admin/ajustes/faq', { valor: [] });
+      const home = (await t.pedir('GET', '/')).texto;
+      debe.contener(home, 'id="como-comprar" hidden');
+      debe.contener(home, 'id="preguntas" hidden');
+      await t.pedir('PUT', '/api/admin/ajustes/pasos', { valor: pasos });
+      await t.pedir('PUT', '/api/admin/ajustes/faq', { valor: faq });
+    });
+
     await prueba('una red apagada no deja un botón roto en la tienda', async () => {
       await t.entrar();
       const antes = (await t.pedir('GET', '/api/admin/ajustes/redes')).datos.valor;

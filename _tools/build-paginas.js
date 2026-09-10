@@ -605,6 +605,15 @@ function construirHome() {
     .replace('{{COLECCIONES_EYEBROW}}', lit(esc(textoDeColecciones().eyebrow)))
     .replace('{{COLECCIONES_TITULO}}', lit(esc(textoDeColecciones().titulo)))
     .replace('{{COLECCIONES_NOTA}}', lit(esc(textoDeColecciones().nota)))
+    /* Si el dueño vacía un bloque desde el panel, la sección entera se va con
+       él. Antes quedaba el título solo, con un hueco debajo: "Tres pasos y
+       listo" y nada, o "Lo que más nos preguntan" y nada. */
+    .replace('{{PASOS_OCULTA}}', lit((CONFIG.pasos || []).length ? '' : ' hidden'))
+    .replace('{{PASOS_TITULO}}', lit(
+      // El título decía tres aunque el panel deja poner hasta cinco
+      (CONFIG.pasos || []).length === 3 ? 'Tres pasos y listo' : 'Así se compra'
+    ))
+    .replace('{{FAQ_OCULTA}}', lit((CONFIG.faq || []).length ? '' : ' hidden'))
     .replace('{{COLECCIONES}}', lit(colecciones()))
     .replace('{{ENTREGAS}}', lit(entregas()))
     .replace('{{ENTREGAS_TITULO}}', lit(fotosDeEntrega().length ? 'Entregas' : 'Míralas de cerca'))

@@ -191,7 +191,14 @@
       var cifras = [
         { n: r.productos, t: 'Productos en catálogo' },
         { n: r.sinPrecio, t: 'Sin precio cargado', alerta: r.sinPrecio > 0 },
-        { n: r.destacados, t: 'Destacados en la portada' },
+        // En la portada caben 8. Decir "11 destacados en la portada" cuando
+        // solo se ven 8 hace que el dueño marque más y no entienda por qué no
+        // cambia nada.
+        {
+          n: r.destacados,
+          t: r.destacados > 8 ? 'Destacados (en la portada caben 8)' : 'Destacados en la portada',
+          alerta: r.destacados > 8,
+        },
         { n: r.pedidosNuevos, t: 'Pedidos sin revisar', alerta: r.pedidosNuevos > 0 },
       ];
       var pendientes = [];
@@ -861,7 +868,8 @@
       var lista = d.productos;
       contenido().innerHTML =
         '<div class="tarjeta"><h2>Qué se muestra en la portada</h2>' +
-        '<p class="sub">Marca las gorras que quieres resaltar. Los cambios se ven en la tienda al instante.</p>' +
+        '<p class="sub">Marca las gorras que quieres resaltar. Los cambios se ven en la tienda al instante. ' +
+        'En la portada caben <b>8</b>: si marcas más, salen las 8 primeras de esta lista.</p>' +
         '<div class="tabla-caja"><table><thead><tr><th style="width:60px"></th><th>Producto</th>' +
         '<th style="width:110px">Destacado</th><th style="width:90px">Nuevo</th><th style="width:110px">Exclusivo</th></tr></thead><tbody>' +
         lista.map(function (p) {

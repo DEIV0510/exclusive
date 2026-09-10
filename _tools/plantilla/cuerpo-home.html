@@ -61,13 +61,13 @@
     </div>
   </section>
 
-  <!-- ══ CÓMO COMPRAR ══ -->
-  <section class="seccion" id="como-comprar">
+  <!-- ══ CÓMO COMPRAR ══ (los pasos se editan en el panel › Página de inicio) -->
+  <section class="seccion" id="como-comprar"{{PASOS_OCULTA}}>
     <div class="contenedor">
       <div class="seccion-cabeza revelar">
         <div>
           <span class="eyebrow">Así funciona</span>
-          <h2 class="t-sec">Tres pasos y listo</h2>
+          <h2 class="t-sec">{{PASOS_TITULO}}</h2>
         </div>
       </div>
       <div class="pasos revelar" id="pasos"></div>
@@ -166,14 +166,18 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-tiktok"></use></svg>
             TikTok
           </a>
+          <a class="btn btn--linea" data-fb href="#" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-facebook"></use></svg>
+            Facebook
+          </a>
         </div>
       </div>
       {{ENTREGAS}}
     </div>
   </section>
 
-  <!-- ══ PREGUNTAS ══ -->
-  <section class="seccion" id="preguntas">
+  <!-- ══ PREGUNTAS ══ (se editan en el panel › Página de inicio) -->
+  <section class="seccion" id="preguntas"{{FAQ_OCULTA}}>
     <div class="contenedor">
       <div class="seccion-cabeza revelar">
         <div>
