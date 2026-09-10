@@ -440,6 +440,19 @@
       (ayuda ? '<small class="campo-ayuda">' + esc(ayuda) + '</small>' : '') + '</label>';
   }
 
+  /* Como select(), pero cuando lo que se guarda no es lo que se lee. Sirve
+     para elegir una gorra por su nombre y guardar su dirección interna: al
+     dueño no hay por qué enseñarle "new-era-9fifty-charlotte-hornets". */
+  function selectPares(nombre, etiqueta, valor, pares, requerido, ayuda) {
+    return '<label class="campo"><span>' + esc(etiqueta) + (requerido ? ' *' : '') + '</span>' +
+      '<select name="' + nombre + '">' +
+      pares.map(function (p) {
+        return '<option value="' + esc(p.valor) + '"' +
+          (String(valor || '') === String(p.valor) ? ' selected' : '') + '>' + esc(p.texto) + '</option>';
+      }).join('') + '</select>' +
+      (ayuda ? '<small class="campo-ayuda">' + esc(ayuda) + '</small>' : '') + '</label>';
+  }
+
   function interruptor(nombre, etiqueta, puesto) {
     return '<label class="interruptor"><input type="checkbox" name="' + nombre + '"' + (puesto ? ' checked' : '') +
       '><span>' + esc(etiqueta) + '</span></label>';
@@ -922,6 +935,25 @@
           [{ n: 'p', e: 'Pregunta', max: 140 }, { n: 'r', e: 'Respuesta', max: 700, area: true }]);
 
       pintarCarrusel();
+      /* De qué tipo es una diapositiva MIENTRAS se edita.
+
+         Lo que se guarda no lleva tipo: una diapositiva es "de foto" si tiene
+         imagen y "de producto" si no. Pero en el panel hace falta un momento
+         intermedio: el dueño elige "una foto que yo elija" y todavía no ha
+         escogido ninguna. Sin este campo aparte, la diapositiva se volvía sola
+         a "de producto" en cuanto se redibujaba, y el desplegable no obedecía.
+         El guion bajo es para acordarse de que no se guarda. */
+      function tipoDe(s) {
+        return s._tipo || (s.imagen ? 'foto' : 'producto');
+      }
+
+      function avisoDeGorraOculta(slug) {
+        var p = OPCIONES.productos.filter(function (x) { return x.slug === slug; })[0];
+        return p && p.estado === 'oculto'
+          ? 'Esta gorra está oculta, así que esta diapositiva NO se ve en la tienda.'
+          : '';
+      }
+
       function pintarCarrusel() {
         $('#carrusel').innerHTML = carrusel.map(function (s, i) {
           return '<div class="tarjeta" style="background:var(--papel);box-shadow:none;margin-bottom:10px" data-dia="' + i + '">' +
@@ -932,13 +964,29 @@
             '<button type="button" class="btn btn--linea btn--sm" data-baja ' + (i === carrusel.length - 1 ? 'disabled' : '') + '>↓</button>' +
             '<button type="button" class="btn btn--suave btn--sm" data-quita style="color:var(--error)">Quitar</button>' +
             '</div></div>' +
-            (s.imagen
+            // De qué es la diapositiva. Antes no se podía cambiar: la primera
+            // había nacido con foto suelta y las demás con producto, y quedaban
+            // así para siempre. Ahora cualquiera puede ser de las dos formas.
+            selectPares('tipo', 'Qué muestra', tipoDe(s), [
+              { valor: 'producto', texto: 'Una gorra del catálogo' },
+              { valor: 'foto', texto: 'Una foto que yo elija' },
+            ], false, tipoDe(s) === 'foto'
+              ? 'La foto y el enlace los pones tú.'
+              : 'La foto y el enlace los toma de la gorra que elijas.') +
+            (tipoDe(s) === 'foto'
               ? selectorDeFoto('imagen', 'Foto de fondo', s.imagen, { requerido: true }) +
                 '<div class="fila fila--2">' +
                 campo('posicion', 'Encuadre', s.posicion || '50% 42%', { max: 20 }) +
                 campo('difuminado', 'Desenfoque (px)', s.difuminado || 0, { tipo: 'number' }) + '</div>' +
                 campo('enlace', 'Enlace del botón', s.enlace || 'catalogo.html', { max: 200 })
-              : select('producto', 'Producto', s.producto, OPCIONES.productos.map(function (x) { return x.slug; }), true)) +
+              : selectPares('producto', 'Gorra', s.producto,
+                  OPCIONES.productos.map(function (x) {
+                    // Una gorra oculta no sale en la tienda, y la diapositiva
+                    // que la use tampoco: mejor decirlo antes de elegirla.
+                    return { valor: x.slug, texto: x.nombre + (x.estado === 'oculto' ? '  (oculta)' : '') };
+                  }), true) +
+                '<small class="campo-ayuda" data-aviso style="display:block;margin:-8px 0 14px;color:var(--aviso)">' +
+                esc(avisoDeGorraOculta(s.producto)) + '</small>') +
             campo('eyebrow', 'Rótulo pequeño', s.eyebrow, { max: 60 }) +
             campo('titulo', 'Título', s.titulo, { max: 60, requerido: true }) +
             campo('texto', 'Frase corta', s.texto, { max: 140 }) +
@@ -955,14 +1003,56 @@
           $('[data-sube]', el).addEventListener('click', function () { if (hayFotoSubiendo()) return; leerCarrusel(); var x = carrusel.splice(i, 1)[0]; carrusel.splice(i - 1, 0, x); pintarCarrusel(); });
           $('[data-baja]', el).addEventListener('click', function () { if (hayFotoSubiendo()) return; leerCarrusel(); var x = carrusel.splice(i, 1)[0]; carrusel.splice(i + 1, 0, x); pintarCarrusel(); });
           $('[data-quita]', el).addEventListener('click', function () { if (hayFotoSubiendo()) return; leerCarrusel(); carrusel.splice(i, 1); pintarCarrusel(); });
+
+          // Cambiar de tipo cambia los campos, así que hay que redibujar. Lo
+          // que se escribió (título, rótulo, frase, botón) se conserva.
+          $('[name="tipo"]', el).addEventListener('change', function () {
+            if (hayFotoSubiendo()) { pintarCarrusel(); return; }
+            leerCarrusel();
+            cambiarTipo(carrusel[i], this.value);
+            pintarCarrusel();
+          });
+
+          // El aviso de gorra oculta se refresca solo, sin redibujar (redibujar
+          // aquí le quitaría el foco al desplegable mientras lo usa)
+          var gorra = $('[name="producto"]', el);
+          if (gorra) {
+            gorra.addEventListener('change', function () {
+              $('[data-aviso]', el).textContent = avisoDeGorraOculta(this.value);
+            });
+          }
         });
+      }
+
+      /* Pasa una diapositiva de "de producto" a "de foto" o al revés. Los dos
+         tipos se distinguen por si hay imagen, así que hay que dejar limpio lo
+         del tipo que se abandona: una imagen olvidada mandaría sobre el
+         producto y la diapositiva no haría lo que dice el desplegable. */
+      function cambiarTipo(s, tipo) {
+        s._tipo = tipo;
+        if (tipo === 'foto') {
+          delete s.producto;
+          if (!s.imagen) s.imagen = '';
+          if (!s.posicion) s.posicion = '50% 42%';
+          if (s.difuminado === undefined) s.difuminado = 0;
+          if (!s.enlace) s.enlace = 'catalogo.html';
+          if (s.cta === 'Comprar ahora') s.cta = 'Ver el catálogo';
+        } else {
+          delete s.imagen;
+          delete s.posicion;
+          delete s.difuminado;
+          delete s.enlace;
+          if (!s.producto) s.producto = (OPCIONES.productos[0] || {}).slug || '';
+          if (s.cta === 'Ver el catálogo') s.cta = 'Comprar ahora';
+        }
       }
 
       function leerCarrusel() {
         $$('#carrusel [data-dia]').forEach(function (el, i) {
           var s = carrusel[i];
           $$('input, select', el).forEach(function (c) {
-            if (!c.name) return;
+            // "tipo" es solo del panel: lo que se guarda es tener imagen o no
+            if (!c.name || c.name === 'tipo') return;
             s[c.name] = c.type === 'number' ? Number(c.value) : c.value;
           });
         });
@@ -978,13 +1068,32 @@
       $('#g-carrusel').addEventListener('click', function () {
         if (hayFotoSubiendo()) return;
         leerCarrusel();
+        /* Una diapositiva de foto a la que no se le puso foto: sin este aviso,
+           el servidor la toma por una de producto y contesta que falta el
+           producto, que no es lo que el dueño ve en pantalla. */
+        var sinFoto = [];
+        carrusel.forEach(function (s, i) { if (!s.producto && !s.imagen) sinFoto.push(i + 1); });
+        if (sinFoto.length) {
+          return avisar(sinFoto.length === 1
+            ? 'Falta la foto de fondo de la diapositiva ' + sinFoto[0] + '.'
+            : 'Faltan las fotos de fondo de las diapositivas ' + sinFoto.join(', ') + '.', 'error');
+        }
         var boton = this;
         boton.disabled = true;
         boton.textContent = 'Guardando…';
         // Un solo aviso y SOLO si las dos cosas se guardaron de verdad: antes
         // salía el visto verde del primer guardado aunque el segundo fallara.
         api('PUT', '/ajustes/carruselSegundos', { valor: Number($('#segundos').value) || 0 })
-          .then(function () { return api('PUT', '/ajustes/carrusel', { valor: carrusel }); })
+          // Se manda sin _tipo: eso es cosa del panel, no de la tienda
+          .then(function () {
+            return api('PUT', '/ajustes/carrusel', {
+              valor: carrusel.map(function (s) {
+                var copia = {};
+                Object.keys(s).forEach(function (k) { if (k !== '_tipo') copia[k] = s[k]; });
+                return copia;
+              }),
+            });
+          })
           .then(function () { avisar('Carrusel guardado correctamente.'); })
           .catch(function (e) { if (e.message !== 'sesion') avisar(e.message, 'error'); })
           .then(function () { boton.disabled = false; boton.textContent = 'Guardar carrusel'; });

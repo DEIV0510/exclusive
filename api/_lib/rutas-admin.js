@@ -819,7 +819,9 @@ async function opciones(req, res) {
   await auth.exigir(req, 'productos');
   const [m, t, colores, productos] = await Promise.all([
     C.listarMarcas(), C.listarTipos(), C.leerAjuste('colores'),
-    todos('SELECT slug, nombre FROM productos ORDER BY nombre'),
+    // El estado va incluido para que el carrusel pueda avisar cuando se elige
+    // una gorra oculta: esa diapositiva no saldría en la tienda.
+    todos('SELECT slug, nombre, estado FROM productos ORDER BY nombre'),
   ]);
   return ok(res, {
     marcas: m.map((x) => x.nombre),
