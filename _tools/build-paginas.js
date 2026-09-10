@@ -460,7 +460,9 @@ function diapositivas() {
     const texto = s.texto || (p && p.descripcion) || '';
     const cta = s.cta || 'Comprar ahora';
     const enlace = s.enlace || (p ? urlProducto(p) : 'catalogo.html');
-    const eyebrow = s.eyebrow || (p ? `${p.marca}${p.modelo ? ' ' + p.modelo : ''}` : '');
+    // Sin el guardia, una gorra sin marca escribía la palabra "null" encima
+    // del título, en la foto grande de la portada
+    const eyebrow = s.eyebrow || (p ? [p.marca, p.modelo].filter(Boolean).join(' ') : '');
     const alt = s.suelta
       ? `${CONFIG.marca} — ${titulo}`
       : altDe(p, 0);

@@ -55,7 +55,7 @@ async function guardarFoto(buffer, nombreSugerido) {
     throw new ErrorDeDatos('No llegó ninguna imagen.');
   }
   if (buffer.length > MAX_BYTES) {
-    throw new ErrorDeDatos('La imagen pesa más de 10 MB. Súbela más liviana.');
+    throw new ErrorDeDatos('La imagen pesa más de 9 MB. Súbela más liviana.');
   }
   const tipo = tipoReal(buffer);
   if (!tipo || !TIPOS_OK[tipo]) {
@@ -95,12 +95,29 @@ async function guardarFoto(buffer, nombreSugerido) {
     datos: await sharp(cuadrada).resize(760, 760).jpeg({ quality: 80, progressive: true }).toBuffer(),
   });
 
+  /* La imagen que sale cuando alguien comparte la ficha por WhatsApp. Sin
+     esto, una gorra con foto subida desde el panel se compartía SIN imagen: el
+     HTML pide assets/img/og-<base>.jpg y ese archivo solo lo generaba el
+     procesador de fotos de la consola. En una tienda que vende por WhatsApp,
+     el enlace sin foto es media venta menos.
+
+     1200x630 es lo que piden WhatsApp y las redes; la gorra va centrada sobre
+     el mismo fondo claro del sitio. */
+  salidas.push({
+    ancho: 1200, tipo: 'og',
+    datos: await sharp(cuadrada)
+      .resize(1200, 630, { fit: 'contain', background: { r: 250, g: 248, b: 244 } })
+      .jpeg({ quality: 82, progressive: true })
+      .toBuffer(),
+  });
+
   // Miniatura borrosa que se pinta mientras baja la foto de verdad
   const mini = await sharp(cuadrada).resize(24, 24).blur(1.1).webp({ quality: 42 }).toBuffer();
   const lqip = 'data:image/webp;base64,' + mini.toString('base64');
 
   for (const s of salidas) {
-    const archivo = `${base}-${s.ancho}.${s.tipo}`;
+    // La de compartir se llama distinto porque así la pide el HTML
+    const archivo = s.tipo === 'og' ? `og-${base}.jpg` : `${base}-${s.ancho}.${s.tipo}`;
     const url = usaBlob() ? await subirABlob(archivo, s.datos, s.tipo) : guardarEnDisco(archivo, s.datos);
     await correr(
       `INSERT INTO archivos (base, ancho, tipo, url, lqip) VALUES (?, ?, ?, ?, ?)
@@ -131,6 +148,17 @@ async function subirABlob(archivo, datos, tipo) {
 
 /* ── Dónde está un archivo concreto ──────────────────────────────────────── */
 async function resolver(archivo) {
+  /* La imagen de compartir no lleva el ancho en el nombre: se llama
+     og-<base>.jpg. Si esa foto no tiene la suya (las subidas antes de que se
+     generara), se cae a la de 760, que es cuadrada pero sirve. */
+  const og = String(archivo).match(/^og-(.+)\.jpg$/);
+  if (og) {
+    const propia = await uno('SELECT url FROM archivos WHERE base = ? AND tipo = ?', [og[1], 'og']);
+    if (propia) return propia.url;
+    const respaldo = await uno('SELECT url FROM archivos WHERE base = ? AND ancho = 760 AND tipo = ?', [og[1], 'jpg']);
+    return respaldo ? respaldo.url : null;
+  }
+
   const m = String(archivo).match(/^(.+)-(\d+)\.(webp|jpg)$/);
   if (!m) return null;
   const fila = await uno('SELECT url FROM archivos WHERE base = ? AND ancho = ? AND tipo = ?', [m[1], Number(m[2]), m[3]]);

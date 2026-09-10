@@ -141,6 +141,19 @@ async function servirPagina(req, res, camino) {
 /* ── Fotos que no están en el disco ──────────────────────────────────────── */
 
 async function servirImagen(req, res, archivo) {
+  /* Una gorra sin fotos usa el emblema de la marca como respaldo, y la tienda
+     lo pide como assets/img/emblema-400.webp. Ese archivo no existe: el
+     emblema vive en assets/logo y con otros tamaños, así que salía el icono de
+     imagen rota en la tarjeta, en la ficha y en el carrito. Y le pasa a
+     cualquier gorra recién creada, antes de subirle la foto. */
+  const emblema = String(archivo).match(/^emblema-\d+\.(webp|jpg)$/);
+  if (emblema) {
+    res.statusCode = 302;
+    res.setHeader('Location', '/assets/logo/emblema-256.webp');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.end();
+  }
+
   const destino = await imagenes.resolver(archivo);
   if (!destino) return sinEseTamano(res, archivo);
   if (/^https?:\/\//.test(destino)) {
@@ -171,6 +184,15 @@ async function servirImagen(req, res, archivo) {
    tamaño grande. En vez de romper, se sirve el 760, que TODAS las fotos de la
    tienda tienen. Se ve un pelo menos nítida en una pantalla grande; se ve. */
 function sinEseTamano(res, archivo) {
+  // La imagen de compartir de una foto que no la tiene: vale la de 760
+  const og = String(archivo).match(/^og-(.+)\.jpg$/);
+  if (og && /^[A-Za-z0-9._~-]+$/.test(og[1])) {
+    res.statusCode = 302;
+    res.setHeader('Location', '/assets/img/' + og[1] + '-760.jpg');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.end();
+  }
+
   const m = String(archivo).match(/^(.+)-(\d+)\.(webp|jpg)$/);
   /* Solo se redirige hacia el 760, nunca desde él (así no hay vuelta atrás), y
      solo si el nombre es de los que acepta el validador de fotos: letras,

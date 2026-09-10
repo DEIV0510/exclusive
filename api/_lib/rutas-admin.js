@@ -523,7 +523,7 @@ const FORMAS = {
     });
     return salida;
   },
-  sitio: (d) => ({ url: V.url(d.url, { obligatoria: true, campo: 'La dirección del sitio' }) }),
+  sitio: (d) => ({ url: V.url(d.url, { obligatoria: true, absoluta: true, campo: 'La dirección del sitio' }) }),
   moneda: (d) => ({
     codigo: V.textoOpcional(d.codigo, { max: 6 }) || 'COP',
     locale: V.textoOpcional(d.locale, { max: 12 }) || 'es-CO',

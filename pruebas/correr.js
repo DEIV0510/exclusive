@@ -290,6 +290,34 @@ const { grupo, prueba, debe, resumen, tiendaDePruebas, RAIZ } = require('./ayuda
       }
     });
 
+    await prueba('una gorra sin fotos NO deja la imagen rota', async () => {
+      /* La tienda usa el emblema de la marca como respaldo y lo pide como
+         assets/img/emblema-400.webp, un archivo que no existe: el emblema vive
+         en assets/logo. Salía el icono de imagen rota en la tarjeta, en la
+         ficha y en el carrito de cualquier gorra recién creada. */
+      await t.entrar();
+      const creado = await t.pedir('POST', '/api/admin/productos',
+        { nombre: 'Gorra sin foto todavía', tipo: 'Snapback', estado: 'disponible' });
+      const ficha = (await t.pedir('GET', '/gorra-' + creado.datos.producto.slug + '.html')).texto;
+      const pedidas = [...new Set([...ficha.matchAll(/assets\/img\/([A-Za-z0-9._~-]+\.(?:webp|jpg))/g)].map((m) => m[1]))];
+      for (const u of pedidas) {
+        const r = await t.pedir('GET', '/assets/img/' + u);
+        debe.ser(r.estado, 200, 'la ficha pide ' + u);
+      }
+      await t.pedir('DELETE', '/api/admin/productos/' + creado.datos.id);
+    });
+
+    await prueba('la imagen para compartir existe también para las fotos subidas', async () => {
+      // Sin ella, el enlace de la gorra sale sin foto en WhatsApp
+      for (const nombre of ['og-ohtani-1.jpg', 'og-esta-no-tiene-og.jpg']) {
+        const r = await t.pedir('GET', '/assets/img/' + nombre, undefined, { seguirRedirecciones: true });
+        debe.cierto(r.estado === 200 || r.estado === 404,
+          nombre + ' respondió ' + r.estado);
+      }
+      const conOg = await t.pedir('GET', '/assets/img/og-ohtani-1.jpg');
+      debe.ser(conOg.estado, 200, 'la de una gorra de la semilla sí existe');
+    });
+
     await prueba('todas las fotos que pide la portada existen', async () => {
       const home = (await t.pedir('GET', '/')).texto;
       const urls = [...new Set([...home.matchAll(/assets\/img\/([A-Za-z0-9_-]+-\d+\.(?:webp|jpg))/g)].map((m) => m[1]))];
@@ -449,6 +477,32 @@ const { grupo, prueba, debe, resumen, tiendaDePruebas, RAIZ } = require('./ayuda
       debe.contener(String(r.datos.error), '8', 'el mensaje tiene que decir cuántas caben');
     });
 
+    /* ═══ CONFIGURACIÓN ═════════════════════════════════════════════════ */
+    grupo('Configuración');
+
+    await prueba('la dirección del sitio sin https:// no se acepta', async () => {
+      /* Pasaba por "enlace relativo" y a partir de ahí el mapa del sitio y las
+         direcciones que lee Google quedaban rotas para toda la tienda. */
+      await t.entrar();
+      const antes = (await t.pedir('GET', '/api/admin/ajustes/sitio')).datos.valor;
+      const r = await t.pedir('PUT', '/api/admin/ajustes/sitio', { valor: { url: 'mitienda.com' } });
+      debe.ser(r.estado, 400);
+      debe.contener(String(r.datos.error), 'https://mitienda.com', 'el mensaje enseña cómo se escribe');
+      debe.ser((await t.pedir('GET', '/api/admin/ajustes/sitio')).datos.valor.url, antes.url,
+        'y no cambió nada');
+    });
+
+    await prueba('con una dirección buena, el mapa del sitio lleva direcciones completas', async () => {
+      await t.entrar();
+      const antes = (await t.pedir('GET', '/api/admin/ajustes/sitio')).datos.valor;
+      await t.pedir('PUT', '/api/admin/ajustes/sitio', { valor: { url: 'https://prueba.example' } });
+      const mapa = (await t.pedir('GET', '/sitemap.xml')).texto;
+      debe.contener(mapa, '<loc>https://prueba.example/');
+      const home = (await t.pedir('GET', '/')).texto;
+      debe.contener(home, 'rel="canonical" href="https://prueba.example');
+      await t.pedir('PUT', '/api/admin/ajustes/sitio', { valor: antes });
+    });
+
     /* ═══ PEDIDOS ═══════════════════════════════════════════════════════ */
     grupo('Pedidos');
 
@@ -466,6 +520,26 @@ const { grupo, prueba, debe, resumen, tiendaDePruebas, RAIZ } = require('./ayuda
       const mio = pedidos.filter((p) => p.referencia === r.datos.referencia)[0];
       debe.cierto(!!mio, 'el pedido queda registrado');
       debe.ser(Number(mio.total), 200000, 'el total sale de la base, no de lo que mande el navegador');
+      await t.pedir('DELETE', '/api/admin/productos/' + creado.datos.id);
+    });
+
+    await prueba('un teléfono raro NO hace perder el pedido', async () => {
+      /* Antes, un cliente que escribiera dos números hacía saltar el validador,
+         el registro fallaba entero y el pedido desaparecía: el cliente mandaba
+         su WhatsApp igual y el dueño no veía nada en el panel. */
+      await t.entrar();
+      const creado = await t.pedir('POST', '/api/admin/productos',
+        { nombre: 'Gorra del teléfono raro', tipo: 'Snapback', precio: 50000, estado: 'disponible' });
+      const raros = ['300 111 2233 / 310 222 3344', 'llámenme al fijo 604 000 0000 ext 12', '+57 300 111 22 33', ''];
+      for (const telefono of raros) {
+        const r = await t.pedir('POST', '/api/pedido', {
+          items: [{ id: creado.datos.id, cantidad: 1 }],
+          cliente: 'Cliente', telefono,
+        }, { sinSesion: true });
+        debe.ser(r.estado, 200, 'con el teléfono ' + JSON.stringify(telefono));
+      }
+      const pedidos = (await t.pedir('GET', '/api/admin/pedidos')).datos.items;
+      debe.cierto(pedidos.length >= raros.length, 'los cuatro pedidos quedaron registrados');
       await t.pedir('DELETE', '/api/admin/productos/' + creado.datos.id);
     });
 

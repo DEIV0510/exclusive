@@ -209,6 +209,13 @@ async function quitarImagen(req, res, base) {
   return ok(res, { mensaje: 'Foto eliminada.' });
 }
 
+/* El teléfono tal como lo escribió el cliente, recortado y sin caracteres de
+   control. Un pedido no se puede perder porque el número venga raro. */
+function telefonoDelPedido(valor) {
+  const t = V.textoOpcional(valor, { max: 60 });
+  return t || null;
+}
+
 /* ── Registrar un pedido ─────────────────────────────────────────────────────
    Lo llama la tienda justo antes de abrir WhatsApp. Si esto fallara, el
    cliente NO se puede quedar sin poder pedir: la tienda abre WhatsApp igual.
@@ -243,7 +250,13 @@ async function registrarPedido(req, res) {
     [
       referencia, ahora(),
       V.textoOpcional(d.cliente, { max: 90 }),
-      V.telefono(d.telefono) || null,
+      /* El teléfono se guarda como venga. Con la validación estricta, un
+         cliente que escribiera dos números ("300 111 2233 / 310 222 3344")
+         hacía saltar el validador, el registro fallaba entero y el pedido se
+         perdía sin que nadie se enterara: el cliente sí mandaba su WhatsApp,
+         pero el dueño no veía nada en el panel. Aquí no se está llamando a
+         nadie: es una nota para el dueño. */
+      telefonoDelPedido(d.telefono),
       V.textoOpcional(d.ciudad, { max: 90 }),
       V.textoOpcional(d.direccion, { max: 160 }),
       V.textoOpcional(d.nota, { max: 400 }),
