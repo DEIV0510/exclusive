@@ -397,6 +397,8 @@
 
       '<div class="tarjeta"><h2>Fotos</h2>' +
       '<p class="sub">La primera es la principal. Arrastra o toca para subir; varios ángulos de la misma gorra van todos aquí, en el mismo producto.</p>' +
+      '<p class="fotocampo-medida" style="margin:0 0 12px"><b>Medida recomendada:</b> ' + MEDIDAS.producto +
+      '<span>' + MEDIDAS.formato + '</span></p>' +
       '<div class="galeria" id="galeria"></div>' +
       '<input type="file" id="archivo" accept="image/jpeg,image/png,image/webp" multiple hidden>' +
       '</div>' +
@@ -465,6 +467,20 @@
       '><span>' + esc(etiqueta) + '</span></label>';
   }
 
+  /* ── Medidas recomendadas de las fotos ──────────────────────────────────
+     Salen de lo que hace el servidor al subir (recorta todo a un cuadrado de
+     1200 px, api/_lib/imagenes.js) y del marco en que la tienda pinta cada
+     foto (css/paginas.css). Si cambia cualquiera de los dos, cambia esto. */
+  var MEDIDAS = {
+    formato: 'JPG, PNG o WEBP · máx. 9 MB',
+    producto: '1200 × 1200 px o más, cuadrada, con la gorra centrada.',
+    carrusel: '1200 × 1200 px o más, cuadrada. En celular llena toda la diapositiva y en ' +
+      'computador ocupa la mitad derecha: deja la gorra en el centro y ajusta con Encuadre.',
+    coleccion: '1200 × 1200 px o más. Se recorta a cuadrado, pero la tarjeta es vertical (4:5) ' +
+      'y corta un 10 % por cada lado: deja letras y gorra en la franja central.',
+    banner: 'Cuadrada, desde 400 × 400 px. Se ve como miniatura pequeña junto al texto.',
+  };
+
   /* ── Selector de foto ─────────────────────────────────────────────────────
      Antes, fuera de Productos, las fotos se pedían escribiendo el nombre del
      archivo a mano: una letra de más y quedaba un hueco en la portada sin que
@@ -485,6 +501,10 @@
       '<button type="button" class="btn btn--suave btn--sm" data-elegir>Elegir una que ya tengo</button>' +
       (o.opcional ? '<button type="button" class="btn btn--suave btn--sm" data-quitar style="color:var(--error)">Quitar</button>' : '') +
       '</div>' +
+      (o.medida
+        ? '<small class="fotocampo-medida"><b>Medida recomendada:</b> ' + esc(o.medida) +
+          '<span>' + esc(MEDIDAS.formato) + '</span></small>'
+        : '') +
       '<small class="campo-ayuda" data-nota></small>' +
       (o.ayuda ? '<small class="campo-ayuda">' + esc(o.ayuda) + '</small>' : '') +
       '</div></div>' +
@@ -668,7 +688,7 @@
           '</div></div>';
       }).join('') +
         '<button type="button" class="subir" id="btn-subir"><span style="font-size:22px">+</span><span>Subir fotos</span>' +
-        '<small style="font-weight:400">JPG, PNG o WEBP · máx. 9 MB</small></button>';
+        '<small style="font-weight:400">1200 × 1200 px · ' + MEDIDAS.formato + '</small></button>';
 
       $$('#galeria [data-i]').forEach(function (el) {
         var i = Number(el.dataset.i);
@@ -986,7 +1006,7 @@
               ? 'La foto y el enlace los pones tú.'
               : 'La foto y el enlace los toma de la gorra que elijas.') +
             (tipoDe(s) === 'foto'
-              ? selectorDeFoto('imagen', 'Foto de fondo', s.imagen, { requerido: true }) +
+              ? selectorDeFoto('imagen', 'Foto de fondo', s.imagen, { requerido: true, medida: MEDIDAS.carrusel }) +
                 '<div class="fila fila--2">' +
                 campo('posicion', 'Encuadre', s.posicion || '50% 42%', { max: 20 }) +
                 campo('difuminado', 'Desenfoque (px)', s.difuminado || 0, { tipo: 'number' }) + '</div>' +
@@ -1267,7 +1287,7 @@
           (c.id ? 'Editar' : 'Nueva') + ' colección</h2>' +
           selectorDeFoto('imagen', 'Foto de la colección', c.imagen, {
             requerido: true,
-            ayuda: 'Al subir una se recorta a cuadrado; en la tarjeta se ve la parte del centro.',
+            medida: MEDIDAS.coleccion,
           }) +
           campo('nombre', 'Nombre', c.nombre, { max: 40, requerido: true }) +
           campo('nota', 'Nota corta', c.nota, { max: 90, ayuda: 'La línea pequeña debajo del nombre.' }) +
@@ -1360,7 +1380,7 @@
         velo.innerHTML = '<form class="dialogo" style="max-width:480px"><h2>' + (b.id ? 'Editar' : 'Nuevo') + ' banner</h2>' +
           campo('titulo', 'Título', b.titulo, { max: 80 }) +
           area('texto', 'Texto', b.texto, 200) +
-          selectorDeFoto('imagen', 'Imagen', b.imagen, { opcional: true }) +
+          selectorDeFoto('imagen', 'Imagen', b.imagen, { opcional: true, medida: MEDIDAS.banner }) +
           '<div class="fila fila--2">' + campo('boton', 'Texto del botón', b.boton, { max: 30 }) +
           campo('enlace', 'Enlace', b.enlace, { max: 300 }) + '</div>' +
           interruptor('activo', 'Se muestra en la tienda', !!b.activo) +
@@ -1544,7 +1564,11 @@
         '<p class="sub">Cómo se ve la tienda en Google. Si los dejas vacíos se usan los textos por defecto.</p>' +
         campo('titulo', 'Título', seo.titulo, { max: 65, ayuda: 'Máximo 65 caracteres o Google lo corta.' }) +
         area('descripcion', 'Descripción', seo.descripcion, 165, 'Máximo 165 caracteres.') +
-        campo('imagen', 'Imagen al compartir', seo.imagen, { max: 300, ayuda: 'Opcional.' }) +
+        campo('imagen', 'Imagen al compartir', seo.imagen, {
+          max: 120,
+          ayuda: 'Opcional. El nombre de una foto que ya subiste, tal como sale en la galería ' +
+            '(por ejemplo ohtani-1). Se comparte en 1200 × 1200 px.',
+        }) +
         '<div style="text-align:right"><button class="btn btn--primario">Guardar</button></div></form>' +
 
         '<form class="tarjeta" id="f-che"><h2>Datos que se le piden al cliente</h2>' +

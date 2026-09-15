@@ -457,6 +457,21 @@ td.acciones .btn { margin-left: 4px; }
 .fotocampo-botones { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
 .fotocampo .campo-ayuda { display: block; overflow-wrap: anywhere; }
 
+/* La medida recomendada: un recuadro suave para que se lea antes de subir,
+   no una línea gris más que nadie mira */
+.fotocampo-medida {
+  display: block;
+  margin: 2px 0 6px;
+  padding: 7px 10px;
+  border-radius: var(--r-sm);
+  background: #EEF4FC;
+  color: var(--tx-2);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.fotocampo-medida b { color: var(--azul); font-weight: 600; }
+.fotocampo-medida span { display: block; margin-top: 2px; color: var(--tx-3); font-size: 12px; }
+
 /* ── Biblioteca de fotos ───────────────────────────────────────────────────
    (.dialogo--ancho vive más abajo, junto a .dialogo: si se declara aquí, la
    regla de .dialogo la pisa por venir después con la misma especificidad.) */
