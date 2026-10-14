@@ -479,6 +479,32 @@ const { grupo, prueba, debe, resumen, tiendaDePruebas, RAIZ } = require('./ayuda
       await t.pedir('PUT', '/api/admin/ajustes/carrusel', { valor: antes });
     });
 
+    await prueba('el desenfoque se puede quitar y poner', async () => {
+      /* El desenfoque solo se pinta cuando los píxeles son mayores que cero, y
+         solo en celular (la regla vive en una media query). Con cero no puede
+         quedar ni la clase ni la variable: si quedara, el dueño apagaría el
+         interruptor y la foto seguiría borrosa. */
+      await t.entrar();
+      const antes = (await t.pedir('GET', '/api/admin/ajustes/carrusel')).datos.valor;
+      const base = { imagen: 'portada', titulo: 'Prueba', cta: 'Ver', posicion: '50% 42%', enlace: 'catalogo.html' };
+
+      await t.pedir('PUT', '/api/admin/ajustes/carrusel', { valor: [{ ...base, difuminado: 0 }] });
+      const sinDesenfoque = (await t.pedir('GET', '/')).texto;
+      debe.noContener(sinDesenfoque, 'es-difuminada', 'apagado no deja la clase');
+      debe.noContener(sinDesenfoque, '--dif:', 'ni la variable');
+
+      await t.pedir('PUT', '/api/admin/ajustes/carrusel', { valor: [{ ...base, difuminado: 3 }] });
+      const conDesenfoque = (await t.pedir('GET', '/')).texto;
+      debe.contener(conDesenfoque, 'es-difuminada', 'encendido sí la pone');
+      debe.contener(conDesenfoque, '--dif:3px');
+
+      // Y el tope sigue siendo 12, venga el número que venga
+      await t.pedir('PUT', '/api/admin/ajustes/carrusel', { valor: [{ ...base, difuminado: 99 }] });
+      debe.contener((await t.pedir('GET', '/')).texto, '--dif:12px', 'se topa en 12');
+
+      await t.pedir('PUT', '/api/admin/ajustes/carrusel', { valor: antes });
+    });
+
     await prueba('no se aceptan más de ocho diapositivas, y lo dice', async () => {
       await t.entrar();
       const muchas = Array.from({ length: 9 }, (_, i) => ({ imagen: 'portada', titulo: 'D' + i }));

@@ -1009,7 +1009,13 @@
               ? selectorDeFoto('imagen', 'Foto de fondo', s.imagen, { requerido: true, medida: MEDIDAS.carrusel }) +
                 '<div class="fila fila--2">' +
                 campo('posicion', 'Encuadre', s.posicion || '50% 42%', { max: 20 }) +
-                campo('difuminado', 'Desenfoque (px)', s.difuminado || 0, { tipo: 'number' }) + '</div>' +
+                (Number(s.difuminado) > 0
+                  ? campo('difuminado', 'Cuánto desenfoque', s.difuminado, { tipo: 'number' })
+                  : '') + '</div>' +
+                interruptor('_desenfocar', 'Desenfocar la foto de fondo', Number(s.difuminado) > 0) +
+                '<small class="campo-ayuda" style="display:block;margin:-6px 0 14px">' +
+                'Solo se nota en el celular, que es donde el título va encima de la foto. ' +
+                'En computador la foto va al lado del texto y se deja nítida siempre.</small>' +
                 campo('enlace', 'Enlace del botón', s.enlace || 'catalogo.html', { max: 200 })
               : selectPares('producto', 'Gorra', s.producto,
                   OPCIONES.productos.map(function (x) {
@@ -1051,6 +1057,16 @@
             cambiarTipo(carrusel[i], this.value);
             pintarCarrusel();
           });
+
+          var desenfoque = $('[name="_desenfocar"]', el);
+          if (desenfoque) {
+            desenfoque.addEventListener('change', function () {
+              // En mitad de una subida, redibujar deja huérfana la foto
+              if (hayFotoSubiendo()) { this.checked = !this.checked; return; }
+              leerCarrusel();
+              pintarCarrusel();
+            });
+          }
 
           // El aviso de gorra oculta se refresca solo, sin redibujar (redibujar
           // aquí le quitaría el foco al desplegable mientras lo usa)
@@ -1108,8 +1124,16 @@
           $$('input, select', el).forEach(function (c) {
             // "tipo" es solo del panel: lo que se guarda es tener imagen o no
             if (!c.name || c.name === 'tipo') return;
+            if (c.type === 'checkbox') { s[c.name] = c.checked; return; }
             s[c.name] = c.type === 'number' ? Number(c.value) : c.value;
           });
+          /* Lo que se guarda son los píxeles, no el interruptor: apagado son
+             cero, y encendido un número entre 1 y 12 (2 si todavía no hay). */
+          if (tipoDe(s) === 'foto') {
+            s.difuminado = s._desenfocar
+              ? Math.min(12, Math.max(1, Number(s.difuminado) || 2))
+              : 0;
+          }
         });
       }
 
